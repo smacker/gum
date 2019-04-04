@@ -1,0 +1,30 @@
+{
+  "type": "0",
+  "value": "a",
+  "children": [
+    {
+      "type": "0",
+      "value": "e",
+      "children": [{ "type": "0", "value": "f" }]
+    },
+    {
+      "type": "0",
+      "value": "b",
+      "children": [{ "type": "0", "value": "c" }, { "type": "0", "value": "d" }]
+    },
+    {
+      "type": "0",
+      "value": "g",
+      "children": [{ "type": "0", "value": "h" }]
+    },
+    {
+      "type": "0",
+      "value": "i"
+    },
+    {
+      "type": "0",
+      "value": "j",
+      "children": [{ "type": "0", "value": "k" }]
+    }
+  ]
+}

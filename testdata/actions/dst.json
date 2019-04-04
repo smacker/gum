@@ -1,0 +1,44 @@
+{
+  "type": "0",
+  "value": "z",
+  "children": [
+    {
+      "type": "0",
+      "value": "b",
+      "children": [{ "type": "0", "value": "c" }, { "type": "0", "value": "d" }]
+    },
+    {
+      "type": "0",
+      "value": "h",
+      "children": [
+        {
+          "type": "0",
+          "value": "e",
+          "children": [{ "type": "0", "value": "y" }]
+        }
+      ]
+    },
+    {
+      "type": "0",
+      "value": "x",
+      "children": [{ "type": "0", "value": "w" }]
+    },
+    {
+      "type": "0",
+      "value": "j",
+      "children": [
+        {
+          "type": "0",
+          "value": "u",
+          "children": [
+            {
+              "type": "0",
+              "value": "v",
+              "children": [{ "type": "0", "value": "k" }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

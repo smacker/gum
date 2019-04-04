@@ -1,0 +1,19 @@
+{
+  "type": "0",
+  "value": "a",
+  "children": [
+    {
+      "type": "0",
+      "value": "b"
+    },
+    {
+      "type": "0",
+      "value": "c",
+      "children": [
+        { "type": "0", "value": "d" },
+        { "type": "1", "value": "e" },
+        { "type": "0", "value": "f" }
+      ]
+    }
+  ]
+}
