@@ -1,5 +1,9 @@
 package gum
 
+import (
+	"fmt"
+)
+
 const defaultMinHeight = 2
 const defaultMaxSize = 100
 const defaultSimThreshold = 0.5
@@ -30,12 +34,31 @@ const (
 type Action struct {
 	Type Operation
 	Node *Tree
-	// Empty for Delete and DeleteTree Types
+	// Empty for Delete, DeleteTree and Update
 	Parent *Tree
 	// Empty for any Type expect Insert, InsertTree and Move
 	Pos int
 	// Empty for any Type except Update
 	Value string
+}
+
+func (a *Action) String() string {
+	switch a.Type {
+	case Delete:
+		return fmt.Sprintf("delete: %s", a.Node)
+	case DeleteTree:
+		return fmt.Sprintf("delete-tree: %s", a.Node)
+	case Insert:
+		return fmt.Sprintf("insert: %s; parent: %s; pos: %d", a.Node, a.Parent, a.Pos)
+	case InsertTree:
+		return fmt.Sprintf("insert-tree: %s; parent: %s; pos: %d", a.Node, a.Parent, a.Pos)
+	case Update:
+		return fmt.Sprintf("update: %s; value: %s", a.Node, a.Value)
+	case Move:
+		return fmt.Sprintf("move: %s; parent: %s; pos: %d", a.Node, a.Parent, a.Pos)
+	default:
+		return "unknown operation"
+	}
 }
 
 // Matcher implements GumTree algorithm to compare abstract syntax trees
