@@ -1,40 +1,149 @@
 package gum
 
-// Tree defines required methods on the AST nodes for gum diff
-type Tree interface {
-	GetID() int
-	GetType() string
-	GetLabel() string
+import (
+	"crypto/md5"
+	"encoding/json"
+	"fmt"
+)
 
-	GetParent() Tree
-	GetChildren() []Tree
-	GetChild(int) Tree
+// Tree is an internal representation of AST tree
+type Tree struct {
+	Type     string
+	Value    string
+	Children []*Tree
 
-	GetSize() int
-	GetHeight() int
-
-	IsLeaf() bool
-	IsIsomorphicTo(Tree) bool
-
-	Clone() Tree
-
-	SetParent(Tree)
-	RemoveChild(Tree)
-	Refresh()
-
-	String() string
+	id     int
+	parent *Tree
+	size   int
+	height int
+	hash   [16]byte
 }
 
-func isRoot(t Tree) bool {
-	return t.GetParent() == nil
+func (t *Tree) String() string {
+	return fmt.Sprintf("%s%s%s", t.Type, "@@", t.Value)
 }
 
-func preOrder(t Tree) []Tree {
-	var trees []Tree
+func (t *Tree) isIsomorphicTo(o *Tree) bool {
+	if o == nil {
+		return false
+	}
+
+	return t.hash == o.hash
+}
+
+func (t *Tree) staticHashString() string {
+	result := "[(" + t.String()
+	for _, child := range t.Children {
+		result += child.staticHashString()
+	}
+	return result + ")]"
+}
+
+func (t *Tree) isLeaf() bool {
+	return len(t.Children) == 0
+}
+
+func (t *Tree) clone() *Tree {
+	cl := *t
+
+	children := make([]*Tree, len(t.Children))
+	for i, c := range t.Children {
+		children[i] = c.clone()
+		children[i].parent = &cl
+	}
+	cl.Children = children
+
+	return &cl
+}
+
+func (t *Tree) removeChild(child *Tree) {
+	n := child
+	newChildren := make([]*Tree, 0)
+	for _, c := range t.Children {
+		if c == n {
+			continue
+		}
+		newChildren = append(newChildren, c)
+	}
+	t.Children = newChildren
+}
+
+func (t *Tree) addChild(pos int, child *Tree) {
+	t.Children = append(t.Children[:pos], append([]*Tree{child}, t.Children[pos:]...)...)
+}
+
+func (t *Tree) refresh(parent *Tree) {
+	for _, child := range t.Children {
+		child.refresh(t)
+	}
+
+	if parent == nil {
+		t.parent = nil
+	} else {
+		t.parent = parent
+	}
+
+	t.refreshSize()
+	t.refreshHeight()
+	t.refreshHash()
+}
+
+func (t *Tree) refreshSize() {
+	for _, t := range postOrder(t) {
+		n := t
+		size := 1
+		if !t.isLeaf() {
+			for _, c := range t.Children {
+				size += c.size
+			}
+		}
+		n.size = size
+	}
+}
+
+func (t *Tree) refreshHeight() {
+	if t.isLeaf() {
+		t.height = 1
+		return
+	}
+
+	t.height = t.Children[0].height
+	for _, child := range t.Children[1:] {
+		if child.height > t.height {
+			t.height = child.height
+		}
+	}
+	t.height++
+}
+
+func (t *Tree) refreshHash() {
+	t.hash = md5.Sum([]byte(t.staticHashString()))
+}
+
+func treeFromJSON(s string) (*Tree, error) {
+	var t Tree
+	if err := json.Unmarshal([]byte(s), &t); err != nil {
+		return nil, err
+	}
+	t.refresh(nil)
+
+	for i, v := range breadthFirst(&t) {
+		v.id = i
+	}
+
+	return &t, nil
+}
+
+func isRoot(t *Tree) bool {
+	return t.parent == nil
+}
+
+func preOrder(t *Tree) []*Tree {
+	var trees []*Tree
 
 	trees = append(trees, t)
-	if !t.IsLeaf() {
-		for _, c := range t.GetChildren() {
+	if !t.isLeaf() {
+		for _, c := range t.Children {
 			trees = append(trees, preOrder(c)...)
 		}
 	}
@@ -42,11 +151,11 @@ func preOrder(t Tree) []Tree {
 	return trees
 }
 
-func postOrder(t Tree) []Tree {
-	var trees []Tree
+func postOrder(t *Tree) []*Tree {
+	var trees []*Tree
 
-	if !t.IsLeaf() {
-		for _, c := range t.GetChildren() {
+	if !t.isLeaf() {
+		for _, c := range t.Children {
 			trees = append(trees, postOrder(c)...)
 		}
 	}
@@ -55,31 +164,31 @@ func postOrder(t Tree) []Tree {
 	return trees
 }
 
-func breadthFirst(t Tree) []Tree {
-	trees := make([]Tree, 0)
-	currents := []Tree{t}
+func breadthFirst(t *Tree) []*Tree {
+	trees := make([]*Tree, 0)
+	currents := []*Tree{t}
 	for len(currents) > 0 {
 		c := currents[0]
 		currents = currents[1:]
 		trees = append(trees, c)
-		currents = append(currents, c.GetChildren()...)
+		currents = append(currents, c.Children...)
 	}
 
 	return trees
 }
 
-func getDescendants(t Tree) []Tree {
+func getDescendants(t *Tree) []*Tree {
 	trees := preOrder(t)
 	return trees[1:]
 }
 
-func getTrees(t Tree) []Tree {
+func getTrees(t *Tree) []*Tree {
 	return preOrder(t)
 }
 
-func getChildPosition(t Tree, child Tree) int {
+func getChildPosition(t *Tree, child *Tree) int {
 	idx := -1
-	for i, c := range t.GetChildren() {
+	for i, c := range t.Children {
 		if c == child {
 			idx = i
 			break
@@ -88,6 +197,6 @@ func getChildPosition(t Tree, child Tree) int {
 	return idx
 }
 
-func positionInParent(t Tree) int {
-	return getChildPosition(t.GetParent(), t)
+func positionInParent(t *Tree) int {
+	return getChildPosition(t.parent, t)
 }

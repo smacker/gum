@@ -10,8 +10,8 @@ import (
 // check description of similarity function for details
 type mappingComparator struct {
 	maxTreeSize    int
-	srcDescendants map[Tree]map[Tree]bool
-	dstDescendants map[Tree]map[Tree]bool
+	srcDescendants map[*Tree]map[*Tree]bool
+	dstDescendants map[*Tree]map[*Tree]bool
 
 	mappings     *mappingStore
 	similarities map[Mapping]float64
@@ -20,8 +20,8 @@ type mappingComparator struct {
 // newMappingComparator creates mappingComparator for list of the list of ambiguous mappings
 func newMappingComparator(ambiguousMappings []Mapping, mappings *mappingStore, maxTreeSize int) *mappingComparator {
 	c := &mappingComparator{
-		srcDescendants: make(map[Tree]map[Tree]bool),
-		dstDescendants: make(map[Tree]map[Tree]bool),
+		srcDescendants: make(map[*Tree]map[*Tree]bool),
+		dstDescendants: make(map[*Tree]map[*Tree]bool),
 		similarities:   make(map[Mapping]float64),
 
 		mappings:    mappings,
@@ -42,11 +42,11 @@ func (c *mappingComparator) Less(m1, m2 Mapping) bool {
 		return c.similarities[m1] > c.similarities[m2]
 	}
 	// mappings with left node closer to the root go first
-	if m1[0].GetID() != m2[0].GetID() {
-		return m1[0].GetID() < m2[0].GetID()
+	if m1[0].id != m2[0].id {
+		return m1[0].id < m2[0].id
 	}
 	// mappings with right node closer to the root go first
-	return m1[1].GetID() < m2[1].GetID()
+	return m1[1].id < m2[1].id
 }
 
 // similarity return a value which indicates how similar src and dst Trees are.
@@ -54,20 +54,20 @@ func (c *mappingComparator) Less(m1, m2 Mapping) bool {
 // - jaccard similarity of descendants for siblings
 // - position in parent similarity
 // - position in the tree (from root) similarity
-func (c *mappingComparator) similarity(src, dst Tree) float64 {
-	return 100*c.jaccardSimilarity(src.GetParent(), dst.GetParent()) +
+func (c *mappingComparator) similarity(src, dst *Tree) float64 {
+	return 100*c.jaccardSimilarity(src.parent, dst.parent) +
 		10*c.posInParentSimilarity(src, dst) + c.numberingSimilarity(src, dst)
 }
 
 // jaccard similarity of descendants
-func (c *mappingComparator) jaccardSimilarity(src, dst Tree) float64 {
+func (c *mappingComparator) jaccardSimilarity(src, dst *Tree) float64 {
 	num := float64(c.numberOfCommonDescendants(src, dst))
 	den := float64(len(c.srcDescendants[src])+len(c.dstDescendants[dst])) - num
 	return num / den
 }
 
 // descendants are common only if they appeared in the mapping
-func (c *mappingComparator) numberOfCommonDescendants(src, dst Tree) int {
+func (c *mappingComparator) numberOfCommonDescendants(src, dst *Tree) int {
 	if _, ok := c.srcDescendants[src]; !ok {
 		for _, d := range getDescendants(src) {
 			c.srcDescendants[src][d] = true
@@ -83,7 +83,7 @@ func (c *mappingComparator) numberOfCommonDescendants(src, dst Tree) int {
 
 	for t := range c.srcDescendants[src] {
 		// skip nodes that didn't appear in the mapping
-		m, ok := c.mappings.srcs[t]
+		m, ok := c.mappings.GetDst(t)
 		if !ok {
 			continue
 		}
@@ -96,18 +96,18 @@ func (c *mappingComparator) numberOfCommonDescendants(src, dst Tree) int {
 	return common
 }
 
-func (c *mappingComparator) posInParentSimilarity(src, dst Tree) float64 {
+func (c *mappingComparator) posInParentSimilarity(src, dst *Tree) float64 {
 	posSrc := 0
 	maxSrcPos := 1
 	if !isRoot(src) {
-		posSrc = getChildPosition(src.GetParent(), src)
-		maxSrcPos = len(src.GetParent().GetChildren())
+		posSrc = getChildPosition(src.parent, src)
+		maxSrcPos = len(src.parent.Children)
 	}
 	posDst := 0
 	maxDstPos := 1
 	if !isRoot(dst) {
-		posDst = getChildPosition(dst.GetParent(), dst)
-		maxDstPos = len(dst.GetParent().GetChildren())
+		posDst = getChildPosition(dst.parent, dst)
+		maxDstPos = len(dst.parent.Children)
 	}
 
 	maxPosDiff := maxSrcPos
@@ -118,6 +118,6 @@ func (c *mappingComparator) posInParentSimilarity(src, dst Tree) float64 {
 	return 1 - (math.Abs(float64(posSrc)-float64(posDst)) / float64(maxPosDiff))
 }
 
-func (c *mappingComparator) numberingSimilarity(src, dst Tree) float64 {
-	return 1 - math.Abs(float64(src.GetID())-float64(dst.GetID())/float64(c.maxTreeSize))
+func (c *mappingComparator) numberingSimilarity(src, dst *Tree) float64 {
+	return 1 - math.Abs(float64(src.id)-float64(dst.id)/float64(c.maxTreeSize))
 }

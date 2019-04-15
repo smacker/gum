@@ -38,7 +38,7 @@ func newZsMatcher() *zsMatcher {
 	return &zsMatcher{mappings: newMappingStore()}
 }
 
-func (m *zsMatcher) Match(src, dst Tree) {
+func (m *zsMatcher) Match(src, dst *Tree) {
 	m.zsSrc = newZsTree(src)
 	m.zsDst = newZsTree(dst)
 
@@ -79,7 +79,7 @@ func (m *zsMatcher) Match(src, dst Tree) {
 					// if both subforests are trees, map nodes
 					tSrc := m.zsSrc.tree(row)
 					tDst := m.zsDst.tree(col)
-					if tSrc.GetType() == tDst.GetType() {
+					if tSrc.Type == tDst.Type {
 						m.addMapping(tSrc, tDst)
 					} else {
 						panic("Should not map incompatible nodes.")
@@ -101,9 +101,9 @@ func (m *zsMatcher) Match(src, dst Tree) {
 }
 
 // computeTreeDist calculates tree and forest distances for keyroots
-func (m *zsMatcher) computeTreeDist(src, dst Tree) {
-	srcSize := src.GetSize() + 1
-	dstSize := dst.GetSize() + 1
+func (m *zsMatcher) computeTreeDist(src, dst *Tree) {
+	srcSize := src.size + 1
+	dstSize := dst.size + 1
 
 	m.treeDist = make([][]float64, srcSize)
 	m.forestDist = make([][]float64, srcSize)
@@ -154,27 +154,27 @@ func (m *zsMatcher) fillForestDist(i, j int) {
 	}
 }
 
-func (m *zsMatcher) getDeletionCost(t Tree) float64 {
+func (m *zsMatcher) getDeletionCost(t *Tree) float64 {
 	return 1
 }
 
-func (m *zsMatcher) getInsertionCost(t Tree) float64 {
+func (m *zsMatcher) getInsertionCost(t *Tree) float64 {
 	return 1
 }
 
-func (m *zsMatcher) getUpdateCost(n1, n2 Tree) float64 {
-	if n1.GetType() == n2.GetType() {
-		if n1.GetLabel() == "" || n2.GetLabel() == "" {
+func (m *zsMatcher) getUpdateCost(n1, n2 *Tree) float64 {
+	if n1.Type == n2.Type {
+		if n1.Value == "" || n2.Value == "" {
 			return 1
 		}
 
-		return 1 - qGramsDistance().Compare(n1.GetLabel(), n2.GetLabel())
+		return 1 - qGramsDistance().Compare(n1.Value, n2.Value)
 	}
 
 	return math.MaxFloat64
 }
 
-func (m *zsMatcher) addMapping(src, dst Tree) {
+func (m *zsMatcher) addMapping(src, dst *Tree) {
 	m.mappings.Link(src, dst)
 }
 
@@ -185,28 +185,28 @@ type zsTree struct {
 	// llds[i] stores the postorder-id of the left-most leaf descendant of the i-th node in postorder
 	llds []int
 	// labels[i] is the tree of the i-th node in postorder
-	labels []Tree
+	labels []*Tree
 
 	// keyroots is the root of the tree + all nodes with a left sibling
 	kr []int
 }
 
-func newZsTree(t Tree) *zsTree {
-	nodeCount := t.GetSize()
+func newZsTree(t *Tree) *zsTree {
+	nodeCount := t.size
 	zt := &zsTree{
 		nodeCount: nodeCount,
 		llds:      make([]int, nodeCount),
-		labels:    make([]Tree, nodeCount),
+		labels:    make([]*Tree, nodeCount),
 	}
 
 	// fill labels and llds
-	tmpData := make(map[Tree]int)
+	tmpData := make(map[*Tree]int)
 	for i, n := range postOrder(t) {
 		tmpData[n] = i
 		zt.labels[i] = n
 		zt.llds[i] = tmpData[getFirstLeaf(n)]
 
-		if n.IsLeaf() {
+		if n.isLeaf() {
 			zt.leafCount++
 		}
 	}
@@ -241,14 +241,14 @@ func (t *zsTree) lld(i int) int {
 }
 
 // tree returns the tree of the i-th node in postorder
-func (t *zsTree) tree(i int) Tree {
+func (t *zsTree) tree(i int) *Tree {
 	return t.labels[i-1]
 }
 
-func getFirstLeaf(t Tree) Tree {
+func getFirstLeaf(t *Tree) *Tree {
 	current := t
-	for !current.IsLeaf() {
-		current = current.GetChild(0)
+	for !current.isLeaf() {
+		current = current.Children[0]
 	}
 
 	return current

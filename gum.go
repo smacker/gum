@@ -5,12 +5,37 @@ const defaultMaxSize = 100
 const defaultSimThreshold = 0.5
 
 // Mapping contains matched nodes from compared trees
-type Mapping [2]Tree
+type Mapping [2]*Tree
 
-// Action holds a tree node and action (insert/delete/update/move)
-type Action interface {
-	Type() string
-	Node() Tree
+// Operation describes what to do with a node for tree transformation
+type Operation int8
+
+const (
+	_ Operation = iota
+	// Delete a single node
+	Delete
+	// DeleteTree means delete a node and all children
+	DeleteTree
+	// Insert a single node
+	Insert
+	// InsertTree means insert a node and all children
+	InsertTree
+	// Update a single node
+	Update
+	// Move a single node
+	Move
+)
+
+// Action contains one patch operation for tree transformation
+type Action struct {
+	Type Operation
+	Node *Tree
+	// Empty for Delete and DeleteTree Types
+	Parent *Tree
+	// Empty for any Type expect Insert, InsertTree and Move
+	Pos int
+	// Empty for any Type except Update
+	Value string
 }
 
 // Matcher implements GumTree algorithm to compare abstract syntax trees
@@ -37,7 +62,7 @@ func NewMatcher() *Matcher {
 }
 
 // Match generate list on mappings (pairs of nodes) that are considered similar in both trees
-func (m *Matcher) Match(src, dst Tree) []Mapping {
+func (m *Matcher) Match(src, dst *Tree) []Mapping {
 	sm := newSubtreeMatcher()
 	sm.MinHeight = m.MinHeight
 	mappings := sm.Match(src, dst)

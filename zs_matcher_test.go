@@ -14,11 +14,11 @@ func TestZsMatcherSimple(t *testing.T) {
 
 	assert.Equal(t, zm.mappings.Size(), 5)
 
-	assert.True(t, zm.mappings.Has(src, dst.GetChild(0)))
-	assert.True(t, zm.mappings.Has(src.GetChild(0), dst.GetChild(0).GetChild(0)))
-	assert.True(t, zm.mappings.Has(src.GetChild(1), dst.GetChild(0).GetChild(1)))
-	assert.True(t, zm.mappings.Has(src.GetChild(1).GetChild(0), dst.GetChild(0).GetChild(1).GetChild(0)))
-	assert.True(t, zm.mappings.Has(src.GetChild(1).GetChild(2), dst.GetChild(0).GetChild(1).GetChild(2)))
+	assert.True(t, zm.mappings.Has(src, getChild(dst, 0)))
+	assert.True(t, zm.mappings.Has(getChild(src, 0), getChild(dst, 0, 0)))
+	assert.True(t, zm.mappings.Has(getChild(src, 1), getChild(dst, 0, 1)))
+	assert.True(t, zm.mappings.Has(getChild(src, 1, 0), getChild(dst, 0, 1, 0)))
+	assert.True(t, zm.mappings.Has(getChild(src, 1, 2), getChild(dst, 0, 1, 2)))
 }
 
 func TestZsMatcherSlide(t *testing.T) {
@@ -30,8 +30,8 @@ func TestZsMatcherSlide(t *testing.T) {
 	assert.Equal(t, zm.mappings.Size(), 5)
 
 	assert.True(t, zm.mappings.Has(src, dst))
-	assert.True(t, zm.mappings.Has(src.GetChild(0).GetChild(0), dst.GetChild(0)))
-	assert.True(t, zm.mappings.Has(src.GetChild(0).GetChild(0).GetChild(0), dst.GetChild(0).GetChild(0)))
-	assert.True(t, zm.mappings.Has(src.GetChild(0).GetChild(1), dst.GetChild(1).GetChild(0)))
-	assert.True(t, zm.mappings.Has(src.GetChild(0).GetChild(2), dst.GetChild(2)))
+	assert.True(t, zm.mappings.Has(getChild(src, 0, 0), getChild(dst, 0)))
+	assert.True(t, zm.mappings.Has(getChild(src, 0, 0, 0), getChild(dst, 0, 0)))
+	assert.True(t, zm.mappings.Has(getChild(src, 0, 1), getChild(dst, 1, 0)))
+	assert.True(t, zm.mappings.Has(getChild(src, 0, 2), getChild(dst, 2)))
 }

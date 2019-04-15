@@ -20,10 +20,10 @@ func newSubtreeMatcher() *subtreeMatcher {
 }
 
 // Match generates MappingStore with pair of nodes from src and dst Trees
-func (m *subtreeMatcher) Match(src, dst Tree) *mappingStore {
-	maxTreeSize := src.GetSize()
-	if dst.GetSize() > maxTreeSize {
-		maxTreeSize = dst.GetSize()
+func (m *subtreeMatcher) Match(src, dst *Tree) *mappingStore {
+	maxTreeSize := src.size
+	if dst.size > maxTreeSize {
+		maxTreeSize = dst.size
 	}
 
 	mMapping := newMultiMapping()
@@ -52,7 +52,7 @@ func (m *subtreeMatcher) Match(src, dst Tree) *mappingStore {
 				src := currentHeightSrcTrees[i]
 				dst := currentHeightDstTrees[j]
 
-				if src.IsIsomorphicTo(dst) {
+				if src.isIsomorphicTo(dst) {
 					mMapping.Link(src, dst)
 					marksForSrcTrees[i] = true
 					marksForDstTrees[j] = true
@@ -87,13 +87,13 @@ func (m *subtreeMatcher) filterMappings(mm *multiMapping, maxTreeSize int) {
 	ambiguousList := make([]Mapping, 0)
 
 	// map of already processed nodes
-	ignored := make(map[Tree]bool)
+	ignored := make(map[*Tree]bool)
 
 	for src := range mm.srcs {
 		// for unique matches add nodes and all children to the mapping
 		if mm.IsSrcUnique(src) {
 			// FIXME ugly
-			var dst Tree
+			var dst *Tree
 			for dst = range mm.srcs[src] {
 				break
 			}
@@ -104,7 +104,7 @@ func (m *subtreeMatcher) filterMappings(mm *multiMapping, maxTreeSize int) {
 		// add the node to ambiguousList with all possible matches
 		if _, ok := ignored[src]; !ok {
 			dsts := mm.srcs[src]
-			var dst Tree
+			var dst *Tree
 			for dst = range mm.srcs[src] {
 				break
 			}
@@ -127,12 +127,12 @@ func (m *subtreeMatcher) filterMappings(mm *multiMapping, maxTreeSize int) {
 	sort.Slice(ambiguousList, func(i, j int) bool { return comp.Less(ambiguousList[i], ambiguousList[j]) })
 
 	// Select the best ambiguous mappings
-	srcIgnored := make(map[Tree]bool)
-	dstIgnored := make(map[Tree]bool)
+	srcIgnored := make(map[*Tree]bool)
+	dstIgnored := make(map[*Tree]bool)
 	m.retainBestMapping(ambiguousList, srcIgnored, dstIgnored)
 }
 
-func (m *subtreeMatcher) addMappingRecursively(src, dst Tree) {
+func (m *subtreeMatcher) addMappingRecursively(src, dst *Tree) {
 	srcTrees := getTrees(src)
 	dstTrees := getTrees(dst)
 	for i := 0; i < len(srcTrees); i++ {
@@ -142,7 +142,7 @@ func (m *subtreeMatcher) addMappingRecursively(src, dst Tree) {
 	}
 }
 
-func (m *subtreeMatcher) addMapping(src, dst Tree) {
+func (m *subtreeMatcher) addMapping(src, dst *Tree) {
 	m.mappings.Link(src, dst)
 }
 
@@ -154,7 +154,7 @@ func (m *subtreeMatcher) popLarger(srcTrees, dstTrees *priorityTreeList) {
 	}
 }
 
-func (m *subtreeMatcher) retainBestMapping(mappings []Mapping, srcIgnored, dstIgnored map[Tree]bool) {
+func (m *subtreeMatcher) retainBestMapping(mappings []Mapping, srcIgnored, dstIgnored map[*Tree]bool) {
 	for len(mappings) > 0 {
 		mapping := mappings[0]
 		mappings = mappings[1:]

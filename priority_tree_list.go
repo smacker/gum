@@ -3,16 +3,16 @@ package gum
 // priorityTreeList is a height-indexed priority list
 // this list contains a sequence of nodes, ordered by decreasing height
 type priorityTreeList struct {
-	trees      [][]Tree
+	trees      [][]*Tree
 	maxHeight  int
 	currentIdx int
 
 	minHeight int
 }
 
-func newPriorityTreeList(tree Tree, minHeight int) *priorityTreeList {
+func newPriorityTreeList(tree *Tree, minHeight int) *priorityTreeList {
 	ptl := &priorityTreeList{minHeight: minHeight}
-	listSize := tree.GetHeight() - minHeight + 1
+	listSize := tree.height - minHeight + 1
 	if listSize < 0 {
 		listSize = 0
 	}
@@ -20,8 +20,8 @@ func newPriorityTreeList(tree Tree, minHeight int) *priorityTreeList {
 		ptl.currentIdx = -1
 	}
 
-	ptl.trees = make([][]Tree, listSize)
-	ptl.maxHeight = tree.GetHeight()
+	ptl.trees = make([][]*Tree, listSize)
+	ptl.maxHeight = tree.height
 	ptl.addTree(tree)
 
 	return ptl
@@ -37,7 +37,7 @@ func (ptl *priorityTreeList) PeekHeight() int {
 
 // Open returns and removes the list of all nodes with the largest height
 // and adds all the children of that trees in the list
-func (ptl *priorityTreeList) Open() []Tree {
+func (ptl *priorityTreeList) Open() []*Tree {
 	pop := ptl.Pop()
 	if pop != nil {
 		for _, tree := range pop {
@@ -50,14 +50,14 @@ func (ptl *priorityTreeList) Open() []Tree {
 }
 
 // AddChildren adds children of the Tree to the list
-func (ptl *priorityTreeList) AddChildren(t Tree) {
-	for _, c := range t.GetChildren() {
+func (ptl *priorityTreeList) AddChildren(t *Tree) {
+	for _, c := range t.Children {
 		ptl.addTree(c)
 	}
 }
 
 // Pop returns and removes the list of all nodes with the largest height
-func (ptl *priorityTreeList) Pop() []Tree {
+func (ptl *priorityTreeList) Pop() []*Tree {
 	if ptl.currentIdx == -1 {
 		return nil
 	}
@@ -78,18 +78,18 @@ func (ptl *priorityTreeList) UpdateHeight() {
 	}
 }
 
-func (ptl *priorityTreeList) addTree(tree Tree) {
-	if tree.GetHeight() < ptl.minHeight {
+func (ptl *priorityTreeList) addTree(tree *Tree) {
+	if tree.height < ptl.minHeight {
 		return
 	}
 
 	idx := ptl.idx(tree)
 	if ptl.trees[idx] == nil {
-		ptl.trees[idx] = make([]Tree, 0)
+		ptl.trees[idx] = make([]*Tree, 0)
 	}
 	ptl.trees[idx] = append(ptl.trees[idx], tree)
 }
 
-func (ptl *priorityTreeList) idx(tree Tree) int {
-	return ptl.maxHeight - tree.GetHeight()
+func (ptl *priorityTreeList) idx(tree *Tree) int {
+	return ptl.maxHeight - tree.height
 }

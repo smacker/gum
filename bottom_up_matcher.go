@@ -12,17 +12,17 @@ type bottomUpMatcher struct {
 	maxSize      int
 	simThreshold float64
 
-	mappedSrc map[int]Tree
-	mappedDst map[int]Tree
+	mappedSrc map[int]*Tree
+	mappedDst map[int]*Tree
 
-	srcIds map[int]Tree
-	dstIds map[int]Tree
+	srcIds map[int]*Tree
+	dstIds map[int]*Tree
 }
 
 // newBottomUpMatcher requires mappings input from previous phase
 func newBottomUpMatcher(mappings *mappingStore) *bottomUpMatcher {
-	mappedSrc := make(map[int]Tree)
-	mappedDst := make(map[int]Tree)
+	mappedSrc := make(map[int]*Tree)
+	mappedDst := make(map[int]*Tree)
 	for left, right := range mappings.srcs {
 		putTrees(mappedSrc, left)
 		putTrees(mappedDst, right)
@@ -37,11 +37,11 @@ func newBottomUpMatcher(mappings *mappingStore) *bottomUpMatcher {
 	}
 }
 
-// Match generates MappingStore with pair of nodes from src and dst Trees
+// Match generates MappingStore with pair of nodes from src and dst trees
 // taking into account previously mapped nodes
-func (m *bottomUpMatcher) Match(src, dst Tree) *mappingStore {
-	m.srcIds = make(map[int]Tree)
-	m.dstIds = make(map[int]Tree)
+func (m *bottomUpMatcher) Match(src, dst *Tree) *mappingStore {
+	m.srcIds = make(map[int]*Tree)
+	m.dstIds = make(map[int]*Tree)
 	putTrees(m.srcIds, src)
 	putTrees(m.dstIds, dst)
 
@@ -56,12 +56,12 @@ func (m *bottomUpMatcher) Match(src, dst Tree) *mappingStore {
 		}
 
 		// this algorithm ignores already matched nodes and leafs
-		if !m.isSrcMatched(t) && !t.IsLeaf() {
+		if !m.isSrcMatched(t) && !t.isLeaf() {
 			candidates := m.getDstCandidates(t)
 
 			// get the best candidate using jaccard similarity of descendants
 			// limited by similarity threshold
-			var best Tree
+			var best *Tree
 			max := float64(-1)
 			for _, cand := range candidates {
 				sim := m.jaccardSimilarity(t, cand)
@@ -86,9 +86,9 @@ func (m *bottomUpMatcher) Match(src, dst Tree) *mappingStore {
 // apply Zhang Shasha algorithm
 // for descendants of container nodes without previously matched nodes
 // if any of result trees have a size smaller than maxSize
-func (m *bottomUpMatcher) lastChanceMatch(src, dst Tree) {
-	cSrc := src.Clone()
-	cDst := dst.Clone()
+func (m *bottomUpMatcher) lastChanceMatch(src, dst *Tree) {
+	cSrc := src.clone()
+	cDst := dst.clone()
 
 	m.removeMatched(cSrc, true)
 	m.removeMatched(cDst, false)
@@ -96,21 +96,21 @@ func (m *bottomUpMatcher) lastChanceMatch(src, dst Tree) {
 	// I follow reference implementation here
 	// in the paper algorithm applied only if both resulting subtrees have a size smaller than maxSize
 	// TODO: investigate how it affects accuracy, it's dangerous in terms of computation time
-	if cSrc.GetSize() < m.maxSize || cDst.GetSize() < m.maxSize {
+	if cSrc.size < m.maxSize || cDst.size < m.maxSize {
 		zsm := newZsMatcher()
 		zsm.Match(cSrc, cDst)
 		for lt, rt := range zsm.mappings.srcs {
-			left := m.srcIds[lt.GetID()]
-			right := m.dstIds[rt.GetID()]
+			left := m.srcIds[lt.id]
+			right := m.dstIds[rt.id]
 
-			if left.GetID() == src.GetID() || right.GetID() == dst.GetID() {
+			if left.id == src.id || right.id == dst.id {
 				//fmt.Printf("Trying to map already mapped source node (%v == %v || %v == %v)\n", left, src, right, dst)
 				continue
 			} else if !m.isMappingAllowed(left, right) {
 				//fmt.Printf("Trying to map incompatible nodes (%v, %v)\n", left, right)
 				continue
-			} else if left.GetParent().GetType() != right.GetParent().GetType() {
-				//fmt.Printf("Trying to map nodes with incompatible parents (%v, %v)\n", left.GetParent(), right.GetParent())
+			} else if left.parent.Type != right.parent.Type {
+				//fmt.Printf("Trying to map nodes with incompatible parents (%v, %v)\n", left.parent, right.parent)
 				continue
 			} else {
 				m.addMapping(left, right)
@@ -122,21 +122,21 @@ func (m *bottomUpMatcher) lastChanceMatch(src, dst Tree) {
 	putTrees(m.mappedDst, dst)
 }
 
-func (m *bottomUpMatcher) isMappingAllowed(src, dst Tree) bool {
-	return src.GetType() == dst.GetType() && !(m.isSrcMatched(src) || m.isSrcMatched(dst))
+func (m *bottomUpMatcher) isMappingAllowed(src, dst *Tree) bool {
+	return src.Type == dst.Type && !(m.isSrcMatched(src) || m.isSrcMatched(dst))
 }
 
 // creates new subtree without previously matched nodes
-func (m *bottomUpMatcher) removeMatched(tree Tree, isSrc bool) Tree {
+func (m *bottomUpMatcher) removeMatched(tree *Tree, isSrc bool) *Tree {
 	for _, t := range getTrees(tree) {
 		if (isSrc && m.isSrcMatched(t)) || ((!isSrc) && m.isDstMatched(t)) {
-			if t.GetParent() != nil {
-				t.GetParent().RemoveChild(t)
+			if t.parent != nil {
+				t.parent.removeChild(t)
 			}
-			t.SetParent(nil)
+			t.parent = nil
 		}
 	}
-	tree.Refresh()
+	tree.refresh(nil)
 
 	return tree
 }
@@ -145,9 +145,9 @@ func (m *bottomUpMatcher) removeMatched(tree Tree, isSrc bool) Tree {
 // - it's unmatched yet
 // - label is equal to src node
 // - source and dst node have some matching descendants
-func (m *bottomUpMatcher) getDstCandidates(src Tree) []Tree {
+func (m *bottomUpMatcher) getDstCandidates(src *Tree) []*Tree {
 	// list dst descendants nodes that were matched previously
-	seeds := make([]Tree, 0)
+	seeds := make([]*Tree, 0)
 	for _, c := range getDescendants(src) {
 		if mp, ok := m.mappings.srcs[c]; ok {
 			seeds = append(seeds, mp)
@@ -155,11 +155,11 @@ func (m *bottomUpMatcher) getDstCandidates(src Tree) []Tree {
 	}
 
 	// any parents of seeds if they match requirements
-	candidates := make([]Tree, 0)
-	visited := make(map[Tree]bool)
+	candidates := make([]*Tree, 0)
+	visited := make(map[*Tree]bool)
 	for _, seed := range seeds {
 		for {
-			p := seed.GetParent()
+			p := seed.parent
 			if p == nil { // skip root nodes, they are special case
 				break
 			}
@@ -168,7 +168,7 @@ func (m *bottomUpMatcher) getDstCandidates(src Tree) []Tree {
 			}
 			visited[p] = true
 
-			if p.GetType() == src.GetType() && !m.isDstMatched(p) && !isRoot(p) {
+			if p.Type == src.Type && !m.isDstMatched(p) && !isRoot(p) {
 				candidates = append(candidates, p)
 			}
 
@@ -179,25 +179,25 @@ func (m *bottomUpMatcher) getDstCandidates(src Tree) []Tree {
 	return candidates
 }
 
-func (m *bottomUpMatcher) isSrcMatched(t Tree) bool {
-	_, ok := m.mappedSrc[t.GetID()]
+func (m *bottomUpMatcher) isSrcMatched(t *Tree) bool {
+	_, ok := m.mappedSrc[t.id]
 	return ok
 }
 
-func (m *bottomUpMatcher) isDstMatched(t Tree) bool {
-	_, ok := m.mappedDst[t.GetID()]
+func (m *bottomUpMatcher) isDstMatched(t *Tree) bool {
+	_, ok := m.mappedDst[t.id]
 	return ok
 }
 
 // jaccard similarity of mapped descendants
-func (m *bottomUpMatcher) jaccardSimilarity(src, dst Tree) float64 {
+func (m *bottomUpMatcher) jaccardSimilarity(src, dst *Tree) float64 {
 	num := m.numberOfCommonDescendants(src, dst)
 	den := len(getDescendants(src)) + len(getDescendants(dst)) - num
 	return float64(num) / float64(den)
 }
 
-func (m *bottomUpMatcher) numberOfCommonDescendants(src, dst Tree) int {
-	dstDescendants := make(map[Tree]bool)
+func (m *bottomUpMatcher) numberOfCommonDescendants(src, dst *Tree) int {
+	dstDescendants := make(map[*Tree]bool)
 	for _, t := range getDescendants(dst) {
 		dstDescendants[t] = true
 	}
@@ -218,14 +218,14 @@ func (m *bottomUpMatcher) numberOfCommonDescendants(src, dst Tree) int {
 	return common
 }
 
-func (m *bottomUpMatcher) addMapping(src, dst Tree) {
-	m.mappedSrc[src.GetID()] = src
-	m.mappedDst[dst.GetID()] = dst
+func (m *bottomUpMatcher) addMapping(src, dst *Tree) {
+	m.mappedSrc[src.id] = src
+	m.mappedDst[dst.id] = dst
 	m.mappings.Link(src, dst)
 }
 
-func putTrees(trees map[int]Tree, tree Tree) {
+func putTrees(trees map[int]*Tree, tree *Tree) {
 	for _, t := range getTrees(tree) {
-		trees[t.GetID()] = t
+		trees[t.id] = t
 	}
 }

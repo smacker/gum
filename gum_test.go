@@ -18,17 +18,17 @@ func TestPaperValidation(t *testing.T) {
 
 	assert.Equal(t, 10, mappings.Size())
 
-	s := src.GetChild(0).GetChild(2).GetChild(1)
-	d := dst.GetChild(0).GetChild(2).GetChild(1)
+	s := getChild(src, 0, 2, 1)
+	d := getChild(dst, 0, 2, 1)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
-	s = src.GetChild(0).GetChild(2).GetChild(3)
-	d = dst.GetChild(0).GetChild(2).GetChild(3)
+	s = getChild(src, 0, 2, 3)
+	d = getChild(dst, 0, 2, 3)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
-	s = src.GetChild(0).GetChild(2).GetChild(4).GetChild(0).GetChild(0)
-	d = dst.GetChild(0).GetChild(2).GetChild(4).GetChild(0).GetChild(0)
+	s = getChild(src, 0, 2, 4, 0, 0)
+	d = getChild(dst, 0, 2, 4, 0, 0)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
-	s = src.GetChild(0).GetChild(2).GetChild(4).GetChild(0).GetChild(1)
-	d = dst.GetChild(0).GetChild(2).GetChild(4).GetChild(0).GetChild(2).GetChild(1)
+	s = getChild(src, 0, 2, 4, 0, 1)
+	d = getChild(dst, 0, 2, 4, 0, 2, 1)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
 
 	bum := newBottomUpMatcher(mappings)
@@ -40,31 +40,31 @@ func TestPaperValidation(t *testing.T) {
 
 	// containers
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", src, dst)
-	s = src.GetChild(0)
-	d = dst.GetChild(0)
+	s = getChild(src, 0)
+	d = getChild(dst, 0)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
-	s = src.GetChild(0).GetChild(2)
-	d = dst.GetChild(0).GetChild(2)
+	s = getChild(src, 0, 2)
+	d = getChild(dst, 0, 2)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
-	s = src.GetChild(0).GetChild(2).GetChild(4)
-	d = dst.GetChild(0).GetChild(2).GetChild(4)
+	s = getChild(src, 0, 2, 4)
+	d = getChild(dst, 0, 2, 4)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
-	s = src.GetChild(0).GetChild(2).GetChild(4).GetChild(0)
-	d = dst.GetChild(0).GetChild(2).GetChild(4).GetChild(0)
+	s = getChild(src, 0, 2, 4, 0)
+	d = getChild(dst, 0, 2, 4, 0)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
 
 	// recovery
-	s = src.GetChild(0).GetChild(0)
-	d = dst.GetChild(0).GetChild(0)
+	s = getChild(src, 0, 0)
+	d = getChild(dst, 0, 0)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
-	s = src.GetChild(0).GetChild(1)
-	d = dst.GetChild(0).GetChild(1)
+	s = getChild(src, 0, 1)
+	d = getChild(dst, 0, 1)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
-	s = src.GetChild(0).GetChild(2).GetChild(0)
-	d = dst.GetChild(0).GetChild(2).GetChild(0)
+	s = getChild(src, 0, 2, 0)
+	d = getChild(dst, 0, 2, 0)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
-	s = src.GetChild(0).GetChild(2).GetChild(2)
-	d = dst.GetChild(0).GetChild(2).GetChild(2)
+	s = getChild(src, 0, 2, 2)
+	d = getChild(dst, 0, 2, 2)
 	assert.True(t, mappings.Has(s, d), "%v = %v mapping not found", s, d)
 }
 
@@ -98,7 +98,7 @@ func TestPaperValidation(t *testing.T) {
 // 	assert.Len(t, mappings, 6)
 // }
 
-func readFixtures(fSrc, fDst string) (*node, *node) {
+func readFixtures(fSrc, fDst string) (*Tree, *Tree) {
 	srcJSON, err := ioutil.ReadFile(fSrc)
 	if err != nil {
 		panic(err)
@@ -108,11 +108,11 @@ func readFixtures(fSrc, fDst string) (*node, *node) {
 		panic(err)
 	}
 
-	src, err := nodeFromJSON(string(srcJSON))
+	src, err := treeFromJSON(string(srcJSON))
 	if err != nil {
 		panic(err)
 	}
-	dst, err := nodeFromJSON(string(dstJSON))
+	dst, err := treeFromJSON(string(dstJSON))
 	if err != nil {
 		panic(err)
 	}
@@ -120,9 +120,16 @@ func readFixtures(fSrc, fDst string) (*node, *node) {
 	return src, dst
 }
 
-func treePrint(t Tree, tab int) {
+func treePrint(t *Tree, tab int) {
 	fmt.Println(strings.Repeat("-", tab), t)
-	for _, c := range t.GetChildren() {
+	for _, c := range t.Children {
 		treePrint(c, tab+1)
 	}
+}
+
+func getChild(t *Tree, path ...int) *Tree {
+	for _, i := range path {
+		t = t.Children[i]
+	}
+	return t
 }
