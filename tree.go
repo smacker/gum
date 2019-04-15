@@ -23,16 +23,21 @@ func (t *Tree) String() string {
 	return fmt.Sprintf("%s%s%s", t.Type, "@@", t.Value)
 }
 
+// Refresh process the tree built from outside and fills internal data
+func (t *Tree) Refresh() {
+	t.refresh(nil)
+
+	for i, v := range breadthFirst(t) {
+		v.id = i
+	}
+}
+
 func (t *Tree) isIsomorphicTo(o *Tree) bool {
 	if o == nil {
 		return false
 	}
 
 	return t.hash == o.hash
-}
-
-func (t *Tree) Refresh() {
-	t.refresh(nil)
 }
 
 func (t *Tree) staticHashString() string {
