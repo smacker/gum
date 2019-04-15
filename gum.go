@@ -52,6 +52,16 @@ type Matcher struct {
 	SimThreshold float64
 }
 
+// Match generate list on mappings (pairs of nodes) that are considered similar in both trees
+func Match(src, dst *Tree) []Mapping {
+	return NewMatcher().Match(src, dst)
+}
+
+// Patch returns list of actions to transform src Tree to dst
+func Patch(src, dst *Tree, mappings []Mapping) []*Action {
+	return newActionGenerator(src, dst, mappings).Generate()
+}
+
 // NewMatcher creates new Matcher with default (recommended) parameters
 func NewMatcher() *Matcher {
 	return &Matcher{
