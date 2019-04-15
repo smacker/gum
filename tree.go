@@ -31,6 +31,10 @@ func (t *Tree) isIsomorphicTo(o *Tree) bool {
 	return t.hash == o.hash
 }
 
+func (t *Tree) Refresh() {
+	t.refresh(nil)
+}
+
 func (t *Tree) staticHashString() string {
 	result := "[(" + t.String()
 	for _, child := range t.Children {
