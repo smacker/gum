@@ -23,7 +23,7 @@ func toTree(n nodes.Node) *gum.Tree {
 		Children: make([]*gum.Tree, len(children)),
 	}
 	for i, child := range children {
-		tree.Children[i] = ToTree(child)
+		tree.Children[i] = toTree(child)
 	}
 
 	return tree
