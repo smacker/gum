@@ -69,11 +69,13 @@ func (c *mappingComparator) jaccardSimilarity(src, dst *Tree) float64 {
 // descendants are common only if they appeared in the mapping
 func (c *mappingComparator) numberOfCommonDescendants(src, dst *Tree) int {
 	if _, ok := c.srcDescendants[src]; !ok {
+		c.srcDescendants[src] = make(map[*Tree]bool)
 		for _, d := range getDescendants(src) {
 			c.srcDescendants[src][d] = true
 		}
 	}
 	if _, ok := c.dstDescendants[dst]; !ok {
+		c.dstDescendants[dst] = make(map[*Tree]bool)
 		for _, d := range getDescendants(dst) {
 			c.dstDescendants[dst][d] = true
 		}
