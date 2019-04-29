@@ -32,6 +32,16 @@ func (t *Tree) Refresh() {
 	}
 }
 
+// GetID returns internal id of the node. Available only after Refresh.
+func (t *Tree) GetID() int {
+	return t.id
+}
+
+// GetParent returns parent node or nil. Available only after Refresh.
+func (t *Tree) GetParent() *Tree {
+	return t.parent
+}
+
 func (t *Tree) isIsomorphicTo(o *Tree) bool {
 	if o == nil {
 		return false
