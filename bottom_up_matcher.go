@@ -123,7 +123,7 @@ func (m *bottomUpMatcher) lastChanceMatch(src, dst *Tree) {
 }
 
 func (m *bottomUpMatcher) isMappingAllowed(src, dst *Tree) bool {
-	return src.Type == dst.Type && !(m.isSrcMatched(src) || m.isSrcMatched(dst))
+	return src.Type == dst.Type && !(m.isSrcMatched(src) || m.isDstMatched(dst))
 }
 
 // creates new subtree without previously matched nodes
