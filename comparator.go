@@ -121,5 +121,5 @@ func (c *mappingComparator) posInParentSimilarity(src, dst *Tree) float64 {
 }
 
 func (c *mappingComparator) numberingSimilarity(src, dst *Tree) float64 {
-	return 1 - math.Abs(float64(src.id)-float64(dst.id)/float64(c.maxTreeSize))
+	return 1 - math.Abs(float64(src.id)-float64(dst.id))/float64(c.maxTreeSize)
 }
