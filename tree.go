@@ -27,7 +27,7 @@ func (t *Tree) String() string {
 func (t *Tree) Refresh() {
 	t.refresh(nil)
 
-	for i, v := range breadthFirst(t) {
+	for i, v := range postOrder(t) {
 		v.id = i
 	}
 }
@@ -146,11 +146,7 @@ func treeFromJSON(s string) (*Tree, error) {
 	if err := json.Unmarshal([]byte(s), &root); err != nil {
 		return nil, err
 	}
-	root.T.refresh(nil)
-
-	for i, v := range breadthFirst(&root.T) {
-		v.id = i
-	}
+	root.T.Refresh()
 
 	return &root.T, nil
 }
