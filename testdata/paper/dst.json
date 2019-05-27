@@ -1,78 +1,82 @@
 {
-  "type": "CompilationUnit",
-  "children": [
-    {
-      "type": "TypeDeclaration",
-      "children": [
-        { "type": "Modifier", "value": "public" },
-        { "type": "SimpleName", "value": "test" },
-        {
-          "type": "MethodDeclatation",
-          "children": [
-            { "type": "Modifier", "value": "public" },
-            {
-              "type": "SimpleType",
-              "value": "String",
-              "children": [{ "type": "SimpleName", "value": "String" }]
-            },
-            { "type": "SimpleName", "value": "foo" },
-            {
-              "type": "SingleVariableDeclaration",
-              "children": [
-                { "type": "PrimitiveType", "value": "int" },
-                { "type": "SimpleName", "value": "i" }
-              ]
-            },
-            {
-              "type": "block",
-              "children": [
-                {
-                  "type": "IfStatement",
-                  "children": [
-                    {
-                      "type": "InfixExpression",
-                      "value": "==",
-                      "children": [
-                        { "type": "SimpleName", "value": "i" },
-                        { "type": "NumberLiteral", "value": "0" }
-                      ]
-                    },
-                    {
-                      "type": "ReturnStatement",
-                      "children": [{ "type": "StringLiteral", "value": "Bar" }]
-                    },
-                    {
-                      "type": "IfStatement",
-                      "children": [
-                        {
-                          "type": "InfixExpression",
-                          "value": "==",
-                          "children": [
-                            { "type": "SimpleName", "value": "i" },
-                            {
-                              "type": "PrefixExpression",
-                              "value": "-",
-                              "children": [
-                                { "type": "NumberLiteral", "value": "1" }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "ReturnStatement",
-                          "children": [
-                            { "type": "StringLiteral", "value": "Foo!" }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
+  "root": {
+    "typeLabel": "CompilationUnit",
+    "children": [
+      {
+        "typeLabel": "TypeDeclaration",
+        "children": [
+          { "typeLabel": "Modifier", "label": "public" },
+          { "typeLabel": "SimpleName", "label": "test" },
+          {
+            "typeLabel": "MethodDeclatation",
+            "children": [
+              { "typeLabel": "Modifier", "label": "public" },
+              {
+                "typeLabel": "SimpleType",
+                "label": "String",
+                "children": [{ "typeLabel": "SimpleName", "label": "String" }]
+              },
+              { "typeLabel": "SimpleName", "label": "foo" },
+              {
+                "typeLabel": "SingleVariableDeclaration",
+                "children": [
+                  { "typeLabel": "PrimitiveType", "label": "int" },
+                  { "typeLabel": "SimpleName", "label": "i" }
+                ]
+              },
+              {
+                "typeLabel": "block",
+                "children": [
+                  {
+                    "typeLabel": "IfStatement",
+                    "children": [
+                      {
+                        "typeLabel": "InfixExpression",
+                        "label": "==",
+                        "children": [
+                          { "typeLabel": "SimpleName", "label": "i" },
+                          { "typeLabel": "NumberLiteral", "label": "0" }
+                        ]
+                      },
+                      {
+                        "typeLabel": "ReturnStatement",
+                        "children": [
+                          { "typeLabel": "StringLiteral", "label": "Bar" }
+                        ]
+                      },
+                      {
+                        "typeLabel": "IfStatement",
+                        "children": [
+                          {
+                            "typeLabel": "InfixExpression",
+                            "label": "==",
+                            "children": [
+                              { "typeLabel": "SimpleName", "label": "i" },
+                              {
+                                "typeLabel": "PrefixExpression",
+                                "label": "-",
+                                "children": [
+                                  { "typeLabel": "NumberLiteral", "label": "1" }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "typeLabel": "ReturnStatement",
+                            "children": [
+                              { "typeLabel": "StringLiteral", "label": "Foo!" }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }

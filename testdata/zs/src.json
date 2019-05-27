@@ -1,19 +1,21 @@
 {
-  "type": "0",
-  "value": "a",
-  "children": [
-    {
-      "type": "0",
-      "value": "b"
-    },
-    {
-      "type": "0",
-      "value": "c",
-      "children": [
-        { "type": "0", "value": "d" },
-        { "type": "1", "value": "e" },
-        { "type": "0", "value": "f" }
-      ]
-    }
-  ]
+  "root": {
+    "typeLabel": "0",
+    "label": "a",
+    "children": [
+      {
+        "typeLabel": "0",
+        "label": "b"
+      },
+      {
+        "typeLabel": "0",
+        "label": "c",
+        "children": [
+          { "typeLabel": "0", "label": "d" },
+          { "typeLabel": "1", "label": "e" },
+          { "typeLabel": "0", "label": "f" }
+        ]
+      }
+    ]
+  }
 }

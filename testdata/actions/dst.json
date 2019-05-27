@@ -1,44 +1,49 @@
 {
-  "type": "0",
-  "value": "z",
-  "children": [
-    {
-      "type": "0",
-      "value": "b",
-      "children": [{ "type": "0", "value": "c" }, { "type": "0", "value": "d" }]
-    },
-    {
-      "type": "0",
-      "value": "h",
-      "children": [
-        {
-          "type": "0",
-          "value": "e",
-          "children": [{ "type": "0", "value": "y" }]
-        }
-      ]
-    },
-    {
-      "type": "0",
-      "value": "x",
-      "children": [{ "type": "0", "value": "w" }]
-    },
-    {
-      "type": "0",
-      "value": "j",
-      "children": [
-        {
-          "type": "0",
-          "value": "u",
-          "children": [
-            {
-              "type": "0",
-              "value": "v",
-              "children": [{ "type": "0", "value": "k" }]
-            }
-          ]
-        }
-      ]
-    }
-  ]
+  "root": {
+    "typeLabel": "0",
+    "label": "z",
+    "children": [
+      {
+        "typeLabel": "0",
+        "label": "b",
+        "children": [
+          { "typeLabel": "0", "label": "c" },
+          { "typeLabel": "0", "label": "d" }
+        ]
+      },
+      {
+        "typeLabel": "0",
+        "label": "h",
+        "children": [
+          {
+            "typeLabel": "0",
+            "label": "e",
+            "children": [{ "typeLabel": "0", "label": "y" }]
+          }
+        ]
+      },
+      {
+        "typeLabel": "0",
+        "label": "x",
+        "children": [{ "typeLabel": "0", "label": "w" }]
+      },
+      {
+        "typeLabel": "0",
+        "label": "j",
+        "children": [
+          {
+            "typeLabel": "0",
+            "label": "u",
+            "children": [
+              {
+                "typeLabel": "0",
+                "label": "v",
+                "children": [{ "typeLabel": "0", "label": "k" }]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }

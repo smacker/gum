@@ -1,30 +1,35 @@
 {
-  "type": "0",
-  "value": "a",
-  "children": [
-    {
-      "type": "0",
-      "value": "e",
-      "children": [{ "type": "0", "value": "f" }]
-    },
-    {
-      "type": "0",
-      "value": "b",
-      "children": [{ "type": "0", "value": "c" }, { "type": "0", "value": "d" }]
-    },
-    {
-      "type": "0",
-      "value": "g",
-      "children": [{ "type": "0", "value": "h" }]
-    },
-    {
-      "type": "0",
-      "value": "i"
-    },
-    {
-      "type": "0",
-      "value": "j",
-      "children": [{ "type": "0", "value": "k" }]
-    }
-  ]
+  "root": {
+    "typeLabel": "0",
+    "label": "a",
+    "children": [
+      {
+        "typeLabel": "0",
+        "label": "e",
+        "children": [{ "typeLabel": "0", "label": "f" }]
+      },
+      {
+        "typeLabel": "0",
+        "label": "b",
+        "children": [
+          { "typeLabel": "0", "label": "c" },
+          { "typeLabel": "0", "label": "d" }
+        ]
+      },
+      {
+        "typeLabel": "0",
+        "label": "g",
+        "children": [{ "typeLabel": "0", "label": "h" }]
+      },
+      {
+        "typeLabel": "0",
+        "label": "i"
+      },
+      {
+        "typeLabel": "0",
+        "label": "j",
+        "children": [{ "typeLabel": "0", "label": "k" }]
+      }
+    ]
+  }
 }

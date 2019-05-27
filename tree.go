@@ -8,9 +8,9 @@ import (
 
 // Tree is an internal representation of AST tree
 type Tree struct {
-	Type     string
-	Value    string
-	Children []*Tree
+	Type     string  `json:"typeLabel"`
+	Value    string  `json:"label"`
+	Children []*Tree `json:"children"`
 
 	id     int
 	parent *Tree
@@ -140,17 +140,19 @@ func (t *Tree) refreshHash() {
 }
 
 func treeFromJSON(s string) (*Tree, error) {
-	var t Tree
-	if err := json.Unmarshal([]byte(s), &t); err != nil {
+	var root struct {
+		T Tree `json:"root"`
+	}
+	if err := json.Unmarshal([]byte(s), &root); err != nil {
 		return nil, err
 	}
-	t.refresh(nil)
+	root.T.refresh(nil)
 
-	for i, v := range breadthFirst(&t) {
+	for i, v := range breadthFirst(&root.T) {
 		v.id = i
 	}
 
-	return &t, nil
+	return &root.T, nil
 }
 
 func isRoot(t *Tree) bool {
