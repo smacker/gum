@@ -1,0 +1,3 @@
+[submodule "testdata/samples"]
+	path = testdata/samples
+	url = https://github.com/GumTreeDiff/samples.git
