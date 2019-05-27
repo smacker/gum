@@ -121,7 +121,7 @@ func readFixtures(fSrc, fDst string) (*Tree, *Tree) {
 }
 
 func treePrint(t *Tree, tab int) {
-	fmt.Println(strings.Repeat("-", tab), t)
+	fmt.Println(strings.Repeat("-", tab), t, t.GetID())
 	for _, c := range t.Children {
 		treePrint(c, tab+1)
 	}
