@@ -35,8 +35,7 @@ func TestToTree(t *testing.T) {
 
 	mappings := gum.Match(src, dst)
 	// mapping looks the same as in gum_test but ast produced by bblfsh is different
-	// 1. NumberLiteral doesn't have label (must be bug in bblfsh.TokenOf)
-	// 2. SimpleType doesn't have label (which makes sense)
+	// SimpleType doesn't have label (which makes sense)
 	assert.Len(mappings, 19)
 	for _, m := range mappings {
 		fmt.Println(m)
