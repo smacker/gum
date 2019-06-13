@@ -24,6 +24,10 @@ func newTreeDelete(node *Tree) *Action {
 	return &Action{Type: DeleteTree, Node: node}
 }
 
+// Generates edit script
+//
+// Algorithm is based on the paper “Change Detection in Hierarchically Structured Information”
+// by S.S. Chawathe, A. Rajaraman, H. Garcia-Molina, and J. Widom.
 type actionGenerator struct {
 	origSrc *Tree
 	newSrc  *Tree
@@ -40,6 +44,8 @@ type actionGenerator struct {
 	srcInOrder map[*Tree]bool
 
 	lastID int
+
+	skipSimplify bool
 }
 
 func newActionGenerator(src, dst *Tree, mappings []Mapping) *actionGenerator {
@@ -58,6 +64,7 @@ func (g *actionGenerator) init(src, dst *Tree, mappings []Mapping) {
 	for _, t := range getTrees(g.origSrc) {
 		g.origSrcTrees[t.id] = t
 	}
+
 	g.cpySrcTrees = make(map[int]*Tree)
 	for _, t := range getTrees(g.newSrc) {
 		g.cpySrcTrees[t.id] = t
@@ -99,6 +106,7 @@ func (g *actionGenerator) Generate() []*Action {
 		var hasDst bool
 		w, hasDst = g.newMappings.GetSrc(x)
 		if !hasDst {
+			// Insert phase
 			// insert new node if there is no such node in dst tree side of new mapping
 			k := g.findPos(x)
 			w = &Tree{id: g.newID(), parent: z}
@@ -110,15 +118,17 @@ func (g *actionGenerator) Generate() []*Action {
 			g.origSrcTrees[w.id] = x
 			// add fake node into new original tree
 			g.newMappings.Link(w, x)
-			// update parent with of the node in original tree with newly created node
+			// update parent of the node in original tree with newly created node
 			// it's safe because we keep clones in the src side of the new mapping
 			z.addChild(k, w)
 		} else if x != g.origDst { // x == origDst is a special case for the root of the tree
+			// Update phase
 			if w.Value != x.Value {
 				actions = append(actions, newUpdate(g.origSrcTrees[w.id], x.Value))
 				// update the clone
 				w.Value = x.Value
 			}
+			// Move phase
 			v := w.parent
 			if z != v {
 				k := g.findPos(x)
@@ -132,23 +142,36 @@ func (g *actionGenerator) Generate() []*Action {
 			}
 		}
 
+		// FIXME: looks like srcInOrder is never used
 		g.srcInOrder[w] = true
 		g.dstInOrder[x] = true
+
 		actions = append(actions, g.alignChildren(w, x)...)
 	}
 
+	// Delete phase
 	for _, w := range postOrder(g.newSrc) {
 		if _, ok := g.newMappings.GetDst(w); !ok {
 			actions = append(actions, newDelete(g.origSrcTrees[w.id]))
 		}
 	}
 
+	if g.skipSimplify {
+		return actions
+	}
+
 	return g.simplify(actions)
 }
 
+// children of w and x are misaligned
+// when mapped children of w have different order in x
+//
+// In short: Compute LCS for mapped children, fix them,
+// move the rest of mapped children relatively to already fixed
 func (g *actionGenerator) alignChildren(w, x *Tree) []*Action {
 	var actions []*Action
 
+	// mark all children of w and x as out of order
 	for _, c := range w.Children {
 		delete(g.srcInOrder, c)
 	}
@@ -156,7 +179,7 @@ func (g *actionGenerator) alignChildren(w, x *Tree) []*Action {
 		delete(g.dstInOrder, c)
 	}
 
-	// list of children of src node that has mapping in dst tree
+	// children of src node that are mappend and belong to a partner node in dst
 	s1 := make([]*Tree, 0)
 	for _, c := range w.Children {
 		if d, ok := g.newMappings.GetDst(c); ok {
@@ -166,7 +189,7 @@ func (g *actionGenerator) alignChildren(w, x *Tree) []*Action {
 		}
 	}
 
-	// list of children of dst node that has mapping in src tree
+	// children of dst node that are mappend and belong to a partner node in src
 	s2 := make([]*Tree, 0)
 	for _, c := range x.Children {
 		if s, ok := g.newMappings.GetSrc(c); ok {
@@ -176,7 +199,11 @@ func (g *actionGenerator) alignChildren(w, x *Tree) []*Action {
 		}
 	}
 
+	// to align children there is more than one sequence of moves
+	// we want the minimal number of moves
+	// use longest common subsequence algorithm for that
 	lcs := g.makeLcs(s1, s2)
+	// put all children from the longest subsequence into "in order"
 	for _, m := range lcs {
 		g.srcInOrder[m[0]] = true
 		g.dstInOrder[m[1]] = true
@@ -184,49 +211,60 @@ func (g *actionGenerator) alignChildren(w, x *Tree) []*Action {
 
 	for _, a := range s1 {
 		for _, b := range s2 {
+			/// FIXME: looks like no need, we already checked during building s1 & s1
+			// we checked in newMappings, not origMappings but newMappings contains all origMappings
 			if !g.origMappings.Has(a, b) {
 				continue
 			}
-			hasMapping := false
+			// skip children that are in LCS
+			ordered := false
 			for _, m := range lcs {
 				if m[0] == a && m[1] == b {
-					hasMapping = true
+					ordered = true
 					break
 				}
 			}
-			if !hasMapping {
-				k := g.findPos(b)
-				mv := newMove(g.origSrcTrees[a.id], g.origSrcTrees[w.id], k)
-				actions = append(actions, mv)
-
-				oldk := positionInParent(a)
-				w.addChild(k, a)
-				if k < oldk {
-					oldk++
-				}
-				a.parent.removeChild(w.parent.Children[oldk])
-				a.parent = w
-				g.srcInOrder[a] = true
-				g.dstInOrder[b] = true
+			if ordered {
+				continue
 			}
 
+			// make a move relatively to the siblings "in order"
+			k := g.findPos(b)
+			mv := newMove(g.origSrcTrees[a.id], g.origSrcTrees[w.id], k)
+			actions = append(actions, mv)
+
+			// apply move
+			oldk := positionInParent(a)
+			a.parent.removeChild(a.parent.Children[oldk])
+			if k > oldk {
+				k--
+			}
+			w.addChild(k, a)
+			a.parent = w
+
+			// Mark a and b "in order"
+			g.srcInOrder[a] = true
+			g.dstInOrder[b] = true
 		}
 	}
 
 	return actions
 }
 
+// make longest common subsequence of lists of children
 func (g *actionGenerator) makeLcs(x, y []*Tree) []Mapping {
 	lcs := make([]Mapping, 0)
 
 	m := len(x)
 	n := len(y)
 
+	// prepate LCS table
 	opt := make([][]int, m+1)
 	for i := range opt {
 		opt[i] = make([]int, n+1)
 	}
 
+	// fill LCS table with the lengths
 	for i := m - 1; i >= 0; i-- {
 		for j := n - 1; j >= 0; j-- {
 			if g.newMappings.dsts[y[j]] == x[i] {
@@ -241,6 +279,7 @@ func (g *actionGenerator) makeLcs(x, y []*Tree) []Mapping {
 		}
 	}
 
+	// traceback to get the subsequence
 	i := 0
 	j := 0
 	for i < m && j < n {
@@ -258,10 +297,13 @@ func (g *actionGenerator) makeLcs(x, y []*Tree) []Mapping {
 	return lcs
 }
 
+// finds where to put a node from dst tree into src tree
+// using relative positions of siblings that are known to be in order
 func (g *actionGenerator) findPos(x *Tree) int {
 	y := x.parent
 	siblings := y.Children
 
+	// If x is the leftmost child of y that is marked "in order" return 1
 	for _, c := range siblings {
 		if _, ok := g.dstInOrder[c]; ok {
 			if c == x {
@@ -271,20 +313,29 @@ func (g *actionGenerator) findPos(x *Tree) int {
 		}
 	}
 
-	xpos := positionInParent(x)
+	// Find v in T2 where v is the rightmost sibling of x that is to the left of x and is marked "in order"
 	var v *Tree
-	for i := 0; i < xpos; i++ {
+	xpos := positionInParent(x)
+	for i := xpos - 1; i >= 0; i-- {
 		c := siblings[i]
 		if _, ok := g.dstInOrder[c]; ok {
 			v = c
+			break
 		}
 	}
 
+	// This case is not described in the paper (assume it is the first node)
 	if v == nil {
 		return 0
 	}
 
-	u, _ := g.newMappings.GetSrc(v)
+	// Let u be the partner of v in T1.
+	u, ok := g.newMappings.GetSrc(v)
+	if !ok {
+		return 0
+	}
+	// Suppose u is the ith child of its parent (counting from left to right) that is marked "in order"
+	// return i+1
 	upos := positionInParent(u)
 
 	return upos + 1
@@ -366,7 +417,7 @@ func (g *actionGenerator) simplify(actions []*Action) []*Action {
 func (g *actionGenerator) newID() int {
 	id := g.lastID
 	g.lastID++
-	return id
+	return id + 1
 }
 
 func newFakeTree(t *Tree) *Tree {
