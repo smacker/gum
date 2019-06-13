@@ -30,6 +30,25 @@ const (
 	Move
 )
 
+func (o Operation) String() string {
+	switch o {
+	case Delete:
+		return "delete"
+	case DeleteTree:
+		return "delete-tree"
+	case Insert:
+		return "insert"
+	case InsertTree:
+		return "insert-tree"
+	case Update:
+		return "update"
+	case Move:
+		return "move"
+	default:
+		return "unknown operation"
+	}
+}
+
 // Action contains one patch operation for tree transformation
 type Action struct {
 	Type Operation
