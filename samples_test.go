@@ -57,7 +57,42 @@ func TestSamples(t *testing.T) {
 		}
 		sort.Slice(diffIDMappings, func(i, j int) bool { return diffIDMappings[i][0] < diffIDMappings[j][0] })
 
-		require.Equal(t, idMappings, diffIDMappings)
+		require.Equal(t, diffIDMappings, idMappings)
+
+		// Json formatter in the reference implementation is strange
+		idMappingAsMap := make(map[int]int, len(mapping))
+		for _, m := range mapping {
+			idMappingAsMap[m[0].GetID()] = m[1].GetID()
+		}
+		dstTreeAsMap := make(map[int]*Tree)
+		for _, t := range getTrees(dst) {
+			dstTreeAsMap[t.GetID()] = t
+		}
+		// fixtures obtained from gumtree-2.1.2 that doesn't have simplify
+		gen := newActionGenerator(src, dst, mapping)
+		gen.skipSimplify = true
+		actions := gen.Generate()
+
+		var diffActions []diffAction
+		for _, a := range actions {
+			var pid, pos int
+			if a.Type == Move {
+				dnode := idMappingAsMap[a.Node.GetID()]
+				pid = dstTreeAsMap[dnode].GetParent().GetID()
+				pos = a.Pos
+			} else if a.Type == Insert {
+				pos = positionInParent(a.Node)
+				pid = a.Node.GetParent().GetID()
+			}
+
+			diffActions = append(diffActions, diffAction{
+				Action: a.Type.String(),
+				Tree:   a.Node.GetID(),
+				Parent: pid,
+				At:     pos,
+			})
+		}
+		require.Equal(t, diff.Actions, diffActions)
 	}
 }
 
@@ -80,8 +115,16 @@ type matchDiffItem struct {
 	Dst int `json:"dest"`
 }
 
+type diffAction struct {
+	Action string
+	Tree   int
+	Parent int
+	At     int
+}
+
 type diff struct {
 	Matches []matchDiffItem `json:"matches"`
+	Actions []diffAction    `json:"actions"`
 }
 
 func debugSampleFailure(mapping []Mapping) {
