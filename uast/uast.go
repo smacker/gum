@@ -21,6 +21,7 @@ func toTree(n nodes.Node) *gum.Tree {
 		Type:     uast.TypeOf(n),
 		Value:    uast.TokenOf(n),
 		Children: make([]*gum.Tree, len(children)),
+		Meta:     n,
 	}
 	for i, child := range children {
 		tree.Children[i] = toTree(child)

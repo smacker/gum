@@ -11,6 +11,7 @@ type Tree struct {
 	Type     string  `json:"typeLabel"`
 	Value    string  `json:"label"`
 	Children []*Tree `json:"children"`
+	Meta     interface{}
 
 	id     int
 	parent *Tree

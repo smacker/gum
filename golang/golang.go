@@ -314,6 +314,7 @@ func toTree(node ast.Node) *gum.Tree {
 		Type:     reflect.TypeOf(node).Elem().Name(),
 		Value:    token,
 		Children: children,
+		Meta:     node,
 	}
 
 	return tree
