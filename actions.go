@@ -389,7 +389,7 @@ func (g *actionGenerator) simplify(actions []*Action) []*Action {
 
 	for t, a := range addedTrees {
 		_, ok := addedTrees[t.parent]
-		if ok && containsAll(addedTrees, getDescendants(t)...) {
+		if ok && containsAll(addedTrees, append(t.parent.Children, getDescendants(t)...)...) {
 			actions = removeAction(actions, a)
 		} else {
 			if len(t.Children) > 0 && containsAll(addedTrees, getDescendants(t)...) {
@@ -401,7 +401,7 @@ func (g *actionGenerator) simplify(actions []*Action) []*Action {
 
 	for t, a := range deletedTrees {
 		_, ok := deletedTrees[t.parent]
-		if ok && containsAll(deletedTrees, getDescendants(t)...) {
+		if ok && containsAll(deletedTrees, append(t.parent.Children, getDescendants(t)...)...) {
 			actions = removeAction(actions, a)
 		} else {
 			if len(t.Children) > 0 && containsAll(deletedTrees, getDescendants(t)...) {
