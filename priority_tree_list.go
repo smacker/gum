@@ -51,6 +51,9 @@ func (ptl *priorityTreeList) Open() []*Tree {
 
 // AddChildren adds children of the Tree to the list
 func (ptl *priorityTreeList) AddChildren(t *Tree) {
+	if t.height < ptl.minHeight {
+		return
+	}
 	for _, c := range t.Children {
 		ptl.addTree(c)
 	}
