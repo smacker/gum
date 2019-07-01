@@ -35,6 +35,23 @@ Patch generation:
 gum diff srcFile dstFile
 ```
 
+## Developement
+
+### Testing
+
+(Optional) Get and prepare samples to compare results with reference implementation:
+
+```bash
+git submodule update
+JAVA_GUM_BIN=/path/to/gumtree-2.1.2/bin ./testdata/process_samples.sh
+```
+
+Run the tests:
+
+```bash
+go test -v ./...
+```
+
 ## Credits
 
 - Based on the paper [Fine-grained and Accurate Source Code Differencing](https://hal.archives-ouvertes.fr/hal-01054552/document) by Jean-Rémy Falleri, Floréal Morandat, Xavier Blanc, Matias Martinez and Martin Monperrus.
