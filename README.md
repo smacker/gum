@@ -35,6 +35,13 @@ Patch generation:
 gum diff srcFile dstFile
 ```
 
+Highlighted diff:
+```
+gum webdiff srcFile dstFile
+```
+
+![webdiff](docs/webdiff.png)
+
 ## Developement
 
 ### Testing

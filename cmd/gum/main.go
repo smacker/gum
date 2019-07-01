@@ -11,13 +11,16 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"text/template"
 
 	"github.com/smacker/gum"
 	"github.com/smacker/gum/golang"
 	"github.com/smacker/gum/uast"
+	bblfshUAST "gopkg.in/bblfsh/sdk.v2/uast"
 
 	flags "github.com/jessevdk/go-flags"
 	bblfsh "gopkg.in/bblfsh/client-go.v2"
+	"gopkg.in/bblfsh/sdk.v2/uast/nodes"
 )
 
 type parseOptions struct {
@@ -265,11 +268,254 @@ type jsonAction struct {
 	Label  string `json:"label,omitempty"`
 }
 
+type webCommand struct {
+	parseOptions
+}
+
+func (c *webCommand) Execute(args []string) error {
+	if c.Parser != "bblfsh" {
+		return fmt.Errorf("only bblfsh driver supports webdiff for now")
+	}
+
+	src, dst, err := c.parse()
+	if err != nil {
+		return err
+	}
+
+	mappings := gum.Match(src, dst)
+	actions := gum.Patch(src, dst, mappings)
+	srcGroups, dstGroups := c.treeGroups(actions, mappings)
+
+	srcb, err := ioutil.ReadFile(c.Args.Src)
+	if err != nil {
+		return err
+	}
+	dstb, err := ioutil.ReadFile(c.Args.Dst)
+	if err != nil {
+		return err
+	}
+
+	t, err := template.New("webpage").Parse(tpl)
+	if err != nil {
+		return err
+	}
+
+	htmlf, err := ioutil.TempFile("", "gum_diff_*.html")
+	if err != nil {
+		return err
+	}
+
+	if err := t.Execute(htmlf, struct {
+		SrcHTML string
+		DstHTML string
+	}{
+		SrcHTML: c.genHTML(srcb, c.srcTags(src, srcGroups)),
+		DstHTML: c.genHTML(dstb, c.dstTags(dst, dstGroups)),
+	}); err != nil {
+		return err
+	}
+
+	if err := htmlf.Close(); err != nil {
+		return err
+	}
+
+	fmt.Println("html file:", htmlf.Name())
+	if runtime.GOOS == "darwin" {
+		_ = exec.Command("open", htmlf.Name()).Run()
+	} else if runtime.GOOS == "linux" {
+		_ = exec.Command("xdg-open", htmlf.Name()).Run()
+	}
+
+	return nil
+}
+
+func (c *webCommand) treeGroups(actions []*gum.Action, mappings []gum.Mapping) (map[string][]*gum.Tree, map[string][]*gum.Tree) {
+	srcGroups := map[string][]*gum.Tree{
+		"mv":  []*gum.Tree{},
+		"del": []*gum.Tree{},
+		"upd": []*gum.Tree{},
+	}
+	dstGroups := map[string][]*gum.Tree{
+		"add": []*gum.Tree{},
+		"mv":  []*gum.Tree{},
+		"del": []*gum.Tree{},
+		"upd": []*gum.Tree{},
+	}
+
+	for _, a := range actions {
+		switch a.Type {
+		case gum.Insert:
+			dstGroups["add"] = append(dstGroups["add"], a.Node)
+		case gum.InsertTree:
+			dstGroups["add"] = append(dstGroups["add"], a.Node)
+			for _, n := range preOrder(a.Node) {
+				dstGroups["add"] = append(dstGroups["add"], n)
+			}
+		case gum.DeleteTree:
+			srcGroups["del"] = append(srcGroups["del"], a.Node)
+			for _, n := range preOrder(a.Node) {
+				srcGroups["del"] = append(srcGroups["del"], n)
+			}
+		case gum.Delete:
+			srcGroups["del"] = append(srcGroups["del"], a.Node)
+		case gum.Update:
+			srcGroups["upd"] = append(srcGroups["upd"], a.Node)
+			dstGroups["upd"] = append(dstGroups["upd"], getDst(mappings, a.Node))
+		case gum.Move:
+			srcGroups["mv"] = append(srcGroups["mv"], a.Node)
+			dstGroups["mv"] = append(dstGroups["mv"], getDst(mappings, a.Node))
+		}
+	}
+
+	return srcGroups, dstGroups
+}
+
+func getDst(mappings []gum.Mapping, t *gum.Tree) *gum.Tree {
+	for _, m := range mappings {
+		if m[0] == t {
+			return m[1]
+		}
+	}
+
+	return nil
+}
+
+func (c *webCommand) srcTags(src *gum.Tree, treeGroups map[string][]*gum.Tree) *tags {
+	tags := newTags()
+	for _, t := range preOrder(src) {
+		n := t.Meta.(nodes.Node)
+		pos := bblfshUAST.PositionsOf(n)
+		start := int(pos["start"].Offset)
+		end := int(pos["end"].Offset)
+
+		switch true {
+		case inGroup(treeGroups["mv"], t):
+			tags.add(start, end, "mv")
+		case inGroup(treeGroups["upd"], t):
+			tags.add(start, end, "upd")
+		case inGroup(treeGroups["del"], t):
+			tags.add(start, end, "del")
+		}
+	}
+
+	return tags
+}
+
+func (c *webCommand) dstTags(dst *gum.Tree, treeGroups map[string][]*gum.Tree) *tags {
+	tags := newTags()
+	for _, t := range preOrder(dst) {
+		n := t.Meta.(nodes.Node)
+		pos := bblfshUAST.PositionsOf(n)
+		start := int(pos["start"].Offset)
+		end := int(pos["end"].Offset)
+
+		switch true {
+		case inGroup(treeGroups["mv"], t):
+			tags.add(start, end, "mv")
+		case inGroup(treeGroups["upd"], t):
+			tags.add(start, end, "upd")
+		case inGroup(treeGroups["add"], t):
+			tags.add(start, end, "add")
+		}
+	}
+
+	return tags
+}
+
+func (c *webCommand) genHTML(text []byte, tags *tags) string {
+	var htmlb []byte
+	var i int
+	for _, ch := range text {
+		if v, ok := tags.starts[i]; ok {
+			for _, action := range v {
+				htmlb = append(htmlb, []byte("<span class='"+action+"'>")...)
+			}
+		}
+		if v, ok := tags.ends[i]; ok {
+			for j := 0; j < v; j++ {
+				htmlb = append(htmlb, []byte("</span>")...)
+			}
+		}
+		htmlb = append(htmlb, ch)
+		i++
+	}
+	if v, ok := tags.ends[i]; ok {
+		for j := 0; j < v; j++ {
+			htmlb = append(htmlb, []byte("</span>")...)
+		}
+	}
+
+	return string(htmlb)
+}
+
+type tags struct {
+	starts map[int][]string
+	ends   map[int]int
+}
+
+func newTags() *tags {
+	return &tags{
+		starts: make(map[int][]string),
+		ends:   make(map[int]int),
+	}
+}
+
+func (ts *tags) add(start, end int, v string) {
+	ts.starts[start] = append(ts.starts[start], v)
+	ts.ends[end]++
+}
+
+func inGroup(trees []*gum.Tree, t *gum.Tree) bool {
+	for _, i := range trees {
+		if i == t {
+			return true
+		}
+	}
+	return false
+}
+
+const tpl = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Webdiff</title>
+    <style>
+      .del {
+        background: #ffeef0;
+      }
+      .add {
+        background: #e6ffed;
+	  }
+	  .upd {
+        background: #ffffd8;
+	  }
+      .mv {
+        background: #efefef;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="display: flex;">
+      <div style="width:50%;">
+        <pre>{{ .SrcHTML }}</pre>
+      </div>
+      <div>
+        <pre>{{ .DstHTML }}</pre>
+      </div>
+    </div>
+  </body>
+</html>
+`
+
 func main() {
 	parser := flags.NewNamedParser("gum", flags.Default)
 
 	parser.AddCommand("match", "parse and display matched nodes", "", &matchCommand{})
 	parser.AddCommand("diff", "parse and display actions", "", &diffCommand{})
+	parser.AddCommand("webdiff", "parse and show web diff", "", &webCommand{})
 
 	_, err := parser.Parse()
 	if err != nil {
