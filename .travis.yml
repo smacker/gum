@@ -1,0 +1,14 @@
+language: go
+
+env:
+  - JAVA_GUM_BIN=./gumtree-2.1.2/bin/gumtree
+
+install:
+  - go get -t -u ./...
+  - git submodule update
+  - wget https://github.com/GumTreeDiff/gumtree/releases/download/v2.1.2/gumtree.zip
+  - unzip gumtree.zip
+  - ./testdata/process_samples.sh
+
+script:
+  - go test -v ./...
