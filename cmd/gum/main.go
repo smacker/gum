@@ -54,7 +54,7 @@ func parseFile(path string, parserName string) (*gum.Tree, error) {
 	case "bblfsh":
 		client, err := bblfsh.NewClient("0.0.0.0:9432")
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("can't connect to bblfsh: %s", err)
 		}
 		res, _, err := client.
 			NewParseRequest().
@@ -62,7 +62,7 @@ func parseFile(path string, parserName string) (*gum.Tree, error) {
 			ReadFile(path).
 			UAST()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("can't parse the file %s: %s", path, err)
 		}
 		return uast.ToTree(res), nil
 	default:
