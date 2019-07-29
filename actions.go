@@ -121,7 +121,7 @@ func (g *actionGenerator) Generate() []*Action {
 			// update parent of the node in original tree with newly created node
 			// it's safe because we keep clones in the src side of the new mapping
 			z.addChild(k, w)
-		} else if x != g.origDst { // x == origDst is a special case for the root of the tree
+		} else {
 			// Update phase
 			if w.Value != x.Value {
 				actions = append(actions, newUpdate(g.origSrcTrees[w.id], x.Value))
