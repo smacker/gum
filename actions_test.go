@@ -2,6 +2,7 @@ package gum
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -236,6 +237,10 @@ func TestActionsApply2(t *testing.T) {
 }
 
 func TestActionsApply3(t *testing.T) {
+	if _, err := os.Stat("testdata/parsed/samples"); os.IsNotExist(err) {
+		t.Skip("directory with processed samples doesn't exist")
+	}
+
 	src, dst := readFixtures("testdata/parsed/samples/java/Example_v0.java", "testdata/parsed/samples/java/Example_v1.java")
 	mappings := Match(src, dst)
 	actions := Patch(src, dst, mappings)
