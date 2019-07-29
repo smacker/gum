@@ -1,6 +1,10 @@
-Unstable.
+# Gum
+
+Gum is a library to compute differences between ASTs using gum-tree-diff algorithm.
 
 ## Usage
+
+API: https://godoc.org/github.com/smacker/gum
 
 ```go
 import "github.com/smacker/gum"
@@ -15,11 +19,26 @@ actions := gum.Patch(srcTree, dstTree, mapping)
 
 ### Bblfsh
 
-The library provides integration with bblfsh. Currently very limited. 
+The library provides basic integration with bblfsh.
 
 ### Golang
 
-The library contains incomplete implementation of integration with native Go parser.
+The library contains incomplete integration with native Go parser.
+
+### Custom
+
+Any other parser can be used but would require transformation into `gum.Tree`:
+
+```go
+t := &gum.Tree{
+    Type:     "string", // type of a node
+    Value:    "string", // value/token/label of a node
+    Children: []*gum.Tree{}, // list of children
+    Meta:     n, // optional pointer to the original node
+}
+
+t.Refresh() // update internal state of the tree
+```
 
 ## Cli
 
