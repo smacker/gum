@@ -375,39 +375,87 @@ func replaceAction(actions []*Action, old, new *Action) []*Action {
 }
 
 func (g *actionGenerator) simplify(actions []*Action) []*Action {
-	addedTrees := make(map[*Tree]*Action)
-	deletedTrees := make(map[*Tree]*Action)
+	newActions := make([]*Action, len(actions))
+	for i, a := range actions {
+		newActions[i] = a
+	}
 
-	for _, a := range actions {
-		switch a.Type {
-		case Insert:
-			addedTrees[a.Node] = a
-		case Delete:
-			deletedTrees[a.Node] = a
+	lastType := Insert
+	seqTrees := make(map[*Tree]*Action)
+	for i, a := range actions {
+		// TODO: update doesn't change the structure of a tree
+		// it's safe to squash actions as long as update is the last operation
+
+		if i > 0 && a.Type != lastType && len(seqTrees) > 0 {
+			if lastType == Insert {
+				newActions = simplifyInsert(seqTrees, newActions)
+			}
+			if lastType == Delete {
+				newActions = simplifyDelete(seqTrees, newActions)
+			}
+
+			seqTrees = make(map[*Tree]*Action)
+		}
+
+		if a.Type == Insert || a.Type == Delete {
+			seqTrees[a.Node] = a
+		}
+
+		lastType = a.Type
+	}
+
+	if len(seqTrees) > 0 {
+		if lastType == Insert {
+			newActions = simplifyInsert(seqTrees, newActions)
+		}
+		if lastType == Delete {
+			newActions = simplifyDelete(seqTrees, newActions)
 		}
 	}
 
-	for t, a := range addedTrees {
-		_, ok := addedTrees[t.parent]
-		if ok && containsAll(addedTrees, append(t.parent.Children, getDescendants(t)...)...) {
-			actions = removeAction(actions, a)
-		} else {
-			if len(t.Children) > 0 && containsAll(addedTrees, getDescendants(t)...) {
-				ti := newTreeInsert(a.Node, a.Parent, a.Pos)
-				actions = replaceAction(actions, a, ti)
-			}
+	return newActions
+}
+
+func simplifyInsert(trees map[*Tree]*Action, actions []*Action) []*Action {
+	var actionToReplace *Action
+	height := 1
+	for t, a := range trees {
+		// find the biggest tree with all descendants inserted
+		if containsAll(trees, getDescendants(t)...) && height < t.height {
+			actionToReplace = a
+			height = t.height
 		}
 	}
 
-	for t, a := range deletedTrees {
-		_, ok := deletedTrees[t.parent]
-		if ok && containsAll(deletedTrees, append(t.parent.Children, getDescendants(t)...)...) {
-			actions = removeAction(actions, a)
-		} else {
-			if len(t.Children) > 0 && containsAll(deletedTrees, getDescendants(t)...) {
-				td := newTreeDelete(a.Node)
-				actions = replaceAction(actions, a, td)
-			}
+	if actionToReplace != nil {
+		a := actionToReplace
+		ti := newTreeInsert(a.Node, a.Parent, a.Pos)
+		actions = replaceAction(actions, a, ti)
+		for _, t := range getDescendants(a.Node) {
+			actions = removeAction(actions, trees[t])
+		}
+	}
+
+	return actions
+}
+
+func simplifyDelete(trees map[*Tree]*Action, actions []*Action) []*Action {
+	var actionToReplace *Action
+	height := 1
+	for t, a := range trees {
+		// find the biggest tree with all descendants inserted
+		if containsAll(trees, getDescendants(t)...) && height < t.height {
+			actionToReplace = a
+			height = t.height
+		}
+	}
+
+	if actionToReplace != nil {
+		a := actionToReplace
+		td := newTreeDelete(a.Node)
+		actions = replaceAction(actions, a, td)
+		for _, t := range getDescendants(a.Node) {
+			actions = removeAction(actions, trees[t])
 		}
 	}
 
