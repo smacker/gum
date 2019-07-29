@@ -43,7 +43,7 @@ func TestToTree(t *testing.T) {
 
 	actions := gum.Patch(src, dst, mappings)
 	// FIXME need to validate that actions are correct
-	assert.Len(actions, 7)
+	assert.Len(actions, 11)
 	for _, a := range actions {
 		fmt.Println(a)
 	}
