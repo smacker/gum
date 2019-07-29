@@ -150,7 +150,7 @@ func (g *actionGenerator) Generate() []*Action {
 	}
 
 	// Delete phase
-	for _, w := range postOrder(g.newSrc) {
+	for _, w := range PostOrder(g.newSrc) {
 		if _, ok := g.newMappings.GetDst(w); !ok {
 			actions = append(actions, newDelete(g.origSrcTrees[w.id]))
 		}

@@ -154,7 +154,7 @@ func graph(w io.Writer, src, dst *gum.Tree, ms []gum.Mapping) {
 }
 
 func writeTree(w io.Writer, root *gum.Tree, m []gum.Mapping, prefix string) {
-	for _, t := range preOrder(root) {
+	for _, t := range gum.PreOrder(root) {
 		fillColor := "red"
 		if inMapping(m, t) {
 			fillColor = "blue"
@@ -348,12 +348,12 @@ func (c *webCommand) treeGroups(actions []*gum.Action, mappings []gum.Mapping) (
 			dstGroups["add"] = append(dstGroups["add"], a.Node)
 		case gum.InsertTree:
 			dstGroups["add"] = append(dstGroups["add"], a.Node)
-			for _, n := range preOrder(a.Node) {
+			for _, n := range gum.PreOrder(a.Node) {
 				dstGroups["add"] = append(dstGroups["add"], n)
 			}
 		case gum.DeleteTree:
 			srcGroups["del"] = append(srcGroups["del"], a.Node)
-			for _, n := range preOrder(a.Node) {
+			for _, n := range gum.PreOrder(a.Node) {
 				srcGroups["del"] = append(srcGroups["del"], n)
 			}
 		case gum.Delete:
@@ -382,7 +382,7 @@ func getDst(mappings []gum.Mapping, t *gum.Tree) *gum.Tree {
 
 func (c *webCommand) srcTags(src *gum.Tree, treeGroups map[string][]*gum.Tree) *tags {
 	tags := newTags()
-	for _, t := range preOrder(src) {
+	for _, t := range gum.PreOrder(src) {
 		n := t.Meta.(nodes.Node)
 		pos := bblfshUAST.PositionsOf(n)
 		start := int(pos["start"].Offset)
@@ -403,7 +403,7 @@ func (c *webCommand) srcTags(src *gum.Tree, treeGroups map[string][]*gum.Tree) *
 
 func (c *webCommand) dstTags(dst *gum.Tree, treeGroups map[string][]*gum.Tree) *tags {
 	tags := newTags()
-	for _, t := range preOrder(dst) {
+	for _, t := range gum.PreOrder(dst) {
 		n := t.Meta.(nodes.Node)
 		pos := bblfshUAST.PositionsOf(n)
 		start := int(pos["start"].Offset)
@@ -525,15 +525,4 @@ func main() {
 			os.Exit(1)
 		}
 	}
-}
-
-func preOrder(t *gum.Tree) []*gum.Tree {
-	var trees []*gum.Tree
-
-	trees = append(trees, t)
-	for _, c := range t.Children {
-		trees = append(trees, preOrder(c)...)
-	}
-
-	return trees
 }

@@ -28,7 +28,7 @@ func (t *Tree) String() string {
 func (t *Tree) Refresh() {
 	t.refresh(nil)
 
-	for i, v := range postOrder(t) {
+	for i, v := range PostOrder(t) {
 		v.id = i
 	}
 }
@@ -109,7 +109,7 @@ func (t *Tree) refresh(parent *Tree) {
 }
 
 func (t *Tree) refreshSize() {
-	for _, t := range postOrder(t) {
+	for _, t := range PostOrder(t) {
 		n := t
 		size := 1
 		if !t.isLeaf() {
@@ -156,26 +156,24 @@ func isRoot(t *Tree) bool {
 	return t.parent == nil
 }
 
-func preOrder(t *Tree) []*Tree {
+// PreOrder returns all nodes in the tree in pre-order
+func PreOrder(t *Tree) []*Tree {
 	var trees []*Tree
 
 	trees = append(trees, t)
-	if !t.isLeaf() {
-		for _, c := range t.Children {
-			trees = append(trees, preOrder(c)...)
-		}
+	for _, c := range t.Children {
+		trees = append(trees, PreOrder(c)...)
 	}
 
 	return trees
 }
 
-func postOrder(t *Tree) []*Tree {
+// PostOrder returns all nodes in the tree in post-order
+func PostOrder(t *Tree) []*Tree {
 	var trees []*Tree
 
-	if !t.isLeaf() {
-		for _, c := range t.Children {
-			trees = append(trees, postOrder(c)...)
-		}
+	for _, c := range t.Children {
+		trees = append(trees, PostOrder(c)...)
 	}
 	trees = append(trees, t)
 
@@ -196,12 +194,12 @@ func breadthFirst(t *Tree) []*Tree {
 }
 
 func getDescendants(t *Tree) []*Tree {
-	trees := preOrder(t)
+	trees := PreOrder(t)
 	return trees[1:]
 }
 
 func getTrees(t *Tree) []*Tree {
-	return preOrder(t)
+	return PreOrder(t)
 }
 
 func getChildPosition(t *Tree, child *Tree) int {

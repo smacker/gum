@@ -45,7 +45,7 @@ func (m *bottomUpMatcher) Match(src, dst *Tree) *mappingStore {
 	putTrees(m.srcIds, src)
 	putTrees(m.dstIds, dst)
 
-	for _, t := range postOrder(src) {
+	for _, t := range PostOrder(src) {
 		// when reach the root of the src tree
 		// always map roots (cause they are "program" nodes)
 		// and stop

@@ -201,7 +201,7 @@ func newZsTree(t *Tree) *zsTree {
 
 	// fill labels and llds
 	tmpData := make(map[*Tree]int)
-	for i, n := range postOrder(t) {
+	for i, n := range PostOrder(t) {
 		tmpData[n] = i
 		zt.labels[i] = n
 		zt.llds[i] = tmpData[getFirstLeaf(n)]
