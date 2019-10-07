@@ -43,7 +43,9 @@ func (t *Tree) GetParent() *Tree {
 	return t.parent
 }
 
-func (t *Tree) isIsomorphicTo(o *Tree) bool {
+// IsIsomorphicTo returns true if the content of the trees is considered equal.
+// Both trees must be Refresh'ed.
+func (t *Tree) IsIsomorphicTo(o *Tree) bool {
 	if o == nil {
 		return false
 	}

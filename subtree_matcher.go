@@ -52,7 +52,7 @@ func (m *subtreeMatcher) Match(src, dst *Tree) *mappingStore {
 				src := currentHeightSrcTrees[i]
 				dst := currentHeightDstTrees[j]
 
-				if src.isIsomorphicTo(dst) {
+				if src.IsIsomorphicTo(dst) {
 					mMapping.Link(src, dst)
 					marksForSrcTrees[i] = true
 					marksForDstTrees[j] = true
