@@ -4,6 +4,13 @@ env:
   - JAVA_GUM_BIN=./gumtree-2.1.2/bin/gumtree
 
 install:
+  # hack for go-tree-sitter
+  - go get -d github.com/smacker/go-tree-sitter
+  - cd $GOPATH/src/github.com/smacker/go-tree-sitter
+  - mkdir -p vendor/go
+  - make tree-sitter vendor/go/parser.o
+  - cd ../gum
+  # normal installation
   - go get -t -u ./...
   - git submodule update
   - wget https://github.com/GumTreeDiff/gumtree/releases/download/v2.1.2/gumtree.zip
