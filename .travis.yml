@@ -11,4 +11,6 @@ install:
   - ./testdata/process_samples.sh
 
 script:
-  - go test -v ./...
+  - go test -v github.com/smacker/gum
+  - go test -v github.com/smacker/gum/uast
+  - go test -v github.com/smacker/gum/tsitter
