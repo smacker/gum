@@ -80,7 +80,7 @@ func (t *Tree) clone() *Tree {
 
 func (t *Tree) removeChild(child *Tree) {
 	n := child
-	newChildren := make([]*Tree, 0)
+	newChildren := make([]*Tree, 0, len(t.Children)-1)
 	for _, c := range t.Children {
 		if c == n {
 			continue
@@ -160,14 +160,19 @@ func isRoot(t *Tree) bool {
 
 // PreOrder returns all nodes in the tree in pre-order
 func PreOrder(t *Tree) []*Tree {
-	var trees []*Tree
-
-	trees = append(trees, t)
-	for _, c := range t.Children {
-		trees = append(trees, PreOrder(c)...)
-	}
+	trees := make([]*Tree, t.size)
+	var i int
+	preOrder(t, trees, &i)
 
 	return trees
+}
+
+func preOrder(t *Tree, trees []*Tree, i *int) {
+	trees[*i] = t
+	*i++
+	for _, c := range t.Children {
+		preOrder(c, trees, i)
+	}
 }
 
 // PostOrder returns all nodes in the tree in post-order
@@ -202,6 +207,13 @@ func getDescendants(t *Tree) []*Tree {
 
 func getTrees(t *Tree) []*Tree {
 	return PreOrder(t)
+}
+
+func putTrees(trees map[int]*Tree, t *Tree) {
+	trees[t.id] = t
+	for _, c := range t.Children {
+		putTrees(trees, c)
+	}
 }
 
 func getChildPosition(t *Tree, child *Tree) int {

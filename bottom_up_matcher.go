@@ -21,8 +21,8 @@ type bottomUpMatcher struct {
 
 // newBottomUpMatcher requires mappings input from previous phase
 func newBottomUpMatcher(mappings *mappingStore) *bottomUpMatcher {
-	mappedSrc := make(map[int]*Tree)
-	mappedDst := make(map[int]*Tree)
+	mappedSrc := make(map[int]*Tree, len(mappings.srcs))
+	mappedDst := make(map[int]*Tree, len(mappings.srcs))
 	for left, right := range mappings.srcs {
 		putTrees(mappedSrc, left)
 		putTrees(mappedDst, right)
@@ -40,8 +40,8 @@ func newBottomUpMatcher(mappings *mappingStore) *bottomUpMatcher {
 // Match generates MappingStore with pair of nodes from src and dst trees
 // taking into account previously mapped nodes
 func (m *bottomUpMatcher) Match(src, dst *Tree) *mappingStore {
-	m.srcIds = make(map[int]*Tree)
-	m.dstIds = make(map[int]*Tree)
+	m.srcIds = make(map[int]*Tree, src.size)
+	m.dstIds = make(map[int]*Tree, dst.size)
 	putTrees(m.srcIds, src)
 	putTrees(m.dstIds, dst)
 
@@ -191,19 +191,22 @@ func (m *bottomUpMatcher) isDstMatched(t *Tree) bool {
 
 // jaccard similarity of mapped descendants
 func (m *bottomUpMatcher) jaccardSimilarity(src, dst *Tree) float64 {
-	num := m.numberOfCommonDescendants(src, dst)
-	den := len(getDescendants(src)) + len(getDescendants(dst)) - num
+	srcDesc := getDescendants(src)
+	dstDesc := getDescendants(dst)
+
+	num := m.numberOfCommonDescendants(srcDesc, dstDesc)
+	den := len(srcDesc) + len(dstDesc) - num
 	return float64(num) / float64(den)
 }
 
-func (m *bottomUpMatcher) numberOfCommonDescendants(src, dst *Tree) int {
-	dstDescendants := make(map[*Tree]bool)
-	for _, t := range getDescendants(dst) {
+func (m *bottomUpMatcher) numberOfCommonDescendants(srcDesc, dstDesc []*Tree) int {
+	dstDescendants := make(map[*Tree]bool, len(dstDesc))
+	for _, t := range dstDesc {
 		dstDescendants[t] = true
 	}
 
 	common := 0
-	for _, t := range getDescendants(src) {
+	for _, t := range srcDesc {
 		m, ok := m.mappings.srcs[t]
 		if !ok {
 			continue
@@ -222,10 +225,4 @@ func (m *bottomUpMatcher) addMapping(src, dst *Tree) {
 	m.mappedSrc[src.id] = src
 	m.mappedDst[dst.id] = dst
 	m.mappings.Link(src, dst)
-}
-
-func putTrees(trees map[int]*Tree, tree *Tree) {
-	for _, t := range getTrees(tree) {
-		trees[t.id] = t
-	}
 }
